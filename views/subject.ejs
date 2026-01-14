@@ -8,6 +8,15 @@
                 </a>
                 <h5 class="fw-bold mb-4 px-2 border-start border-4 border-primary ps-2"><%= subject.name %></h5>
                 
+                <div class="d-grid gap-2 mb-4">
+                     <a href="/subject/<%= subject._id %>" class="btn btn-primary btn-sm text-start">
+                        <i class="fas fa-book-open me-2"></i> Study Notes
+                     </a>
+                     <a href="/subject/<%= subject._id %>/papers" class="btn btn-outline-primary btn-sm text-start">
+                        <i class="fas fa-file-alt me-2"></i> Question Papers
+                     </a>
+                </div>
+
                 <% if (typeof chapters !== 'undefined') { %>
                     <% for (const [chapter, topicList] of Object.entries(chapters)) { %>
                         <div class="mb-3">

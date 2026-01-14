@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const Subject = require('../models/Subject');
 const Topic = require('../models/Topic');
+const Paper = require('../models/Paper');
 const Progress = require('../models/Progress');
 const Goal = require('../models/Goal');
 const Announcement = require('../models/Announcement');
@@ -15,7 +16,7 @@ function escapeRegex(text) {
 // Home Route: Dashboard with Progress
 router.get('/', async (req, res) => {
     try {
-        const subjects = await Subject.find({});
+        const subjects = await Subject.find({}).sort({ semester: 1, name: 1 });
         // Announcements fetched via middleware
         
         let progressMap = {};
@@ -147,6 +148,35 @@ router.get('/subject/:id', async (req, res) => {
             prevTopic,
             nextTopic,
             userProgress
+        });
+
+    } catch (err) {
+        console.error(err);
+        res.status(500).send('Server Error');
+    }
+});
+
+// Subject Papers View
+router.get('/subject/:id/papers', async (req, res) => {
+    try {
+        const subject = await Subject.findById(req.params.id);
+        if (!subject) return res.status(404).send('Subject not found');
+
+        const papers = await Paper.find({ subject: subject._id }).sort({ year: -1 });
+
+        // Fetch chapters for sidebar consistency
+        const allTopics = await Topic.find({ subject: subject._id }).sort({ createdAt: 1 });
+        const chapters = {};
+        allTopics.forEach(topic => {
+            if (!chapters[topic.chapterName]) chapters[topic.chapterName] = [];
+            chapters[topic.chapterName].push(topic);
+        });
+
+        res.render('subject-papers', {
+            subject,
+            papers,
+            chapters,
+            activeTopic: null // To highlight sidebar correctly if needed, or just leave null
         });
 
     } catch (err) {

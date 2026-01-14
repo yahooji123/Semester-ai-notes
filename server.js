@@ -1,3 +1,11 @@
+/**
+ * Semester Notes Management System
+ * Final Year Project
+ * 
+ * Main Server File
+ * Configures Express, Database, Middleware, and Routes.
+ */
+
 require('dotenv').config();
 const express = require('express');
 const mongoose = require('mongoose');
@@ -7,38 +15,50 @@ const methodOverride = require('method-override');
 const path = require('path');
 const { injectUser } = require('./middleware/context');
 
+// Initialize App
 const app = express();
 
-// Database Connection
+/**
+ * Database Connection (MongoDB)
+ */
 mongoose.connect(process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/semester_notes')
-  .then(() => console.log('MongoDB Connected'))
-  .catch(err => console.error('MongoDB Connection Error:', err));
+  .then(() => console.log('✅ MongoDB Connected Successfully'))
+  .catch(err => console.error('❌ MongoDB Connection Error:', err));
 
-// Middleware
-app.use(express.urlencoded({ extended: true }));
-app.use(express.json());
-app.use(methodOverride('_method'));
-app.use(express.static(path.join(__dirname, 'public')));
+/**
+ * Middleware Configuration
+ */
+app.use(express.urlencoded({ extended: true })); // Parse URL-encoded bodies
+app.use(express.json()); // Parse JSON bodies
+app.use(methodOverride('_method')); // Support PUT/DELETE in forms
+app.use(express.static(path.join(__dirname, 'public'))); // Serve static files
 
-// Session
+/**
+ * Session Configuration
+ */
 app.use(session({
   secret: process.env.session_secret || 'dev_secret',
   resave: false,
   saveUninitialized: false,
   store: MongoStore.create({ mongoUrl: process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/semester_notes' }),
-  cookie: { maxAge: 1000 * 60 * 60 * 24 } // 1 day
+  cookie: { maxAge: 1000 * 60 * 60 * 24 } // 1 day session
 }));
 
-// View Engine
+// View Engine Setup (EJS)
 app.set('view engine', 'ejs');
 
-// Custom Middleware
+// Custom Global Middleware (User Context)
 app.use(injectUser);
 
-// Routes
-app.use('/', require('./routes/indexRoutes'));
-app.use('/', require('./routes/authRoutes'));
-app.use('/admin', require('./routes/adminRoutes'));
+/**
+ * Route Handlers
+ */
+app.use('/', require('./routes/indexRoutes')); // Public Routes
+app.use('/', require('./routes/authRoutes'));  // Authentication
+app.use('/admin', require('./routes/adminRoutes')); // Admin Panel
 
+/**
+ * Server Start
+ */
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`Server running on http://localhost:${PORT}`));
+app.listen(PORT, () => console.log(`🚀 Server running on http://localhost:${PORT}`));

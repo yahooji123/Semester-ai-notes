@@ -7,6 +7,13 @@ const subjectSchema = new mongoose.Schema({
     unique: true
   },
   description: String,
+  semester: {
+    type: Number,
+    required: true,
+    min: 1,
+    max: 8,
+    default: 1
+  },
   createdAt: {
     type: Date,
     default: Date.now

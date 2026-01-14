@@ -92,43 +92,87 @@
         </div>
     <% } %>
 
-    <!-- Subjects Grid -->
-    <div class="row g-4">
-        <% if (subjects.length > 0) { %>
-            <% subjects.forEach((subject, index) => { %>
-                <div class="col-md-4 col-lg-3" data-aos="fade-up" data-aos-delay="<%= index * 100 %>">
-                    <div class="card h-100 border-0 hover-card p-3">
-                        <div class="subject-icon">
-                            <i class="fas fa-book-open"></i>
-                        </div>
-                        <div class="card-body text-center p-0 pt-2">
-                            <h3 class="h5 fw-bold mb-2 text-dark"><%= subject.name %></h3>
-                            <p class="text-muted small mb-3"><%= subject.description || 'Comprehensive study notes' %></p>
-                            
-                            <% if (typeof progressMap !== 'undefined' && progressMap[subject._id]) { %>
-                                <div class="text-start mb-1 ms-1">
-                                    <small class="text-muted fw-bold" style="font-size: 0.7rem;">PROGRESS</small>
-                                </div>
-                                <div class="progress progress-slim mb-2" title="<%= progressMap[subject._id].percentage %>% Completed">
-                                    <div class="progress-bar progress-bar-custom" role="progressbar" style="width: <%= progressMap[subject._id].percentage %>%"></div>
-                                </div>
-                                <div class="d-flex justify-content-between">
-                                    <span class="badge bg-light text-dark border"><%= progressMap[subject._id].completed %>/<%= progressMap[subject._id].total %> Topics</span>
-                                </div>
-                            <% } %>
+    <%
+        // Group subjects by semester
+        const subjectsBySem = {};
+        if (typeof subjects !== 'undefined' && subjects.length > 0) {
+            subjects.forEach(sub => {
+                const sem = sub.semester || 1;
+                if (!subjectsBySem[sem]) subjectsBySem[sem] = [];
+                subjectsBySem[sem].push(sub);
+            });
+        }
+        const semesters = Object.keys(subjectsBySem).sort((a,b) => a - b);
+    %>
 
-                            <a href="/subject/<%= subject._id %>" class="btn btn-outline-primary w-100 rounded-pill mt-3 stretched-link">Start Learning</a>
+    <!-- Subjects Section with Semester Tabs -->
+    <div class="row" data-aos="fade-up">
+        <div class="col-12 mb-4">
+            <h3 class="fw-bold text-dark border-start border-4 border-primary ps-3">Your Subjects</h3>
+        </div>
+
+        <div class="col-12 mb-4">
+            <ul class="nav nav-pills nav-fill bg-white rounded shadow-sm p-1" id="semesterTab" role="tablist">
+                <% if (semesters.length > 0) { %>
+                    <% semesters.forEach((sem, index) => { %>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link <%= index === 0 ? 'active fw-bold' : '' %>" id="sem-<%= sem %>-tab" data-bs-toggle="tab" data-bs-target="#sem-<%= sem %>" type="button" role="tab">
+                                Semester <%= sem %>
+                            </button>
+                        </li>
+                    <% }) %>
+                <% } else { %>
+                    <li class="nav-item"><span class="nav-link disabled">No Data</span></li>
+                <% } %>
+            </ul>
+        </div>
+
+        <div class="col-12">
+            <div class="tab-content" id="semesterTabContent">
+                <% if (semesters.length > 0) { %>
+                    <% semesters.forEach((sem, index) => { %>
+                        <div class="tab-pane fade <%= index === 0 ? 'show active' : '' %>" id="sem-<%= sem %>" role="tabpanel">
+                            <div class="row g-4">
+                                <% subjectsBySem[sem].forEach(subject => { %>
+                                    <div class="col-md-6 col-lg-3" data-aos="zoom-in" data-aos-delay="100">
+                                        <div class="card h-100 border-0 hover-card p-3">
+                                            <div class="subject-icon">
+                                                <i class="fas fa-book-open"></i>
+                                            </div>
+                                            <div class="card-body text-center p-0 pt-2">
+                                                <h3 class="h5 fw-bold mb-2 text-dark"><%= subject.name %></h3>
+                                                <p class="text-muted small mb-3"><%= subject.description || 'Comprehensive study notes' %></p>
+                                                
+                                                <% if (typeof progressMap !== 'undefined' && progressMap[subject._id]) { %>
+                                                    <div class="text-start mb-1 ms-1">
+                                                        <small class="text-muted fw-bold" style="font-size: 0.7rem;">PROGRESS</small>
+                                                    </div>
+                                                    <div class="progress progress-slim mb-2" title="<%= progressMap[subject._id].percentage %>% Completed">
+                                                        <div class="progress-bar progress-bar-custom" role="progressbar" style="width: <%= progressMap[subject._id].percentage %>%"></div>
+                                                    </div>
+                                                    <div class="d-flex justify-content-between">
+                                                        <span class="badge bg-light text-dark border"><%= progressMap[subject._id].completed %>/<%= progressMap[subject._id].total %> Topics</span>
+                                                    </div>
+                                                <% } %>
+                    
+                                                <a href="/subject/<%= subject._id %>" class="btn btn-outline-primary w-100 rounded-pill mt-3 stretched-link">Start Learning</a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                <% }) %>
+                            </div>
                         </div>
+                    <% }) %>
+                <% } else { %>
+                    <div class="text-center py-5">
+                       <p class="text-muted">No subjects found.</p>
+                       <div class="alert alert-light border shadow-sm p-4 rounded-3 d-inline-block mt-3">
+                        <i class="fas fa-box-open fa-3x text-muted mb-3"></i>
+                        <p class="mb-0">No subjects added yet. Login as Admin to add one!</p>
+                       </div>
                     </div>
-                </div>
-            <% }) %>
-        <% } else { %>
-            <div class="col-12 text-center" data-aos="zoom-in">
-                <div class="alert alert-light border shadow-sm p-4 rounded-3 d-inline-block">
-                    <i class="fas fa-box-open fa-3x text-muted mb-3"></i>
-                    <p class="mb-0">No subjects added yet. Login as Admin to add one!</p>
-                </div>
+                <% } %>
             </div>
-        <% } %>
+        </div>
     </div>
 <%- include('partials/footer') %>

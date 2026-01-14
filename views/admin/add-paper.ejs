@@ -1,0 +1,53 @@
+<%- include('../partials/header') %>
+
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow-sm border-0">
+                <div class="card-body p-4">
+                    <h3 class="mb-4 fw-bold">Upload Previous Year Paper</h3>
+                    
+                    <form action="/admin/paper/add" method="POST" enctype="multipart/form-data">
+                        <div class="mb-3">
+                            <label class="form-label">Subject</label>
+                            <select name="subjectId" class="form-select" required>
+                                <% subjects.forEach(sub => { %>
+                                    <option value="<%= sub._id %>">Sem <%= sub.semester %> - <%= sub.name %></option>
+                                <% }) %>
+                            </select>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Title/Name</label>
+                                <input type="text" name="title" class="form-control" placeholder="e.g. End Semester Exam" required>
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <label class="form-label">Year</label>
+                                <input type="number" name="year" class="form-control" value="<%= new Date().getFullYear() %>" required>
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <label class="form-label">Type</label>
+                                <select name="type" class="form-select">
+                                    <option value="end">End Sem</option>
+                                    <option value="mid">Mid Sem</option>
+                                    <option value="assignment">Assignment</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label">Upload Images (One or Multiple)</label>
+                            <input type="file" name="images" class="form-control" multiple accept="image/*" required>
+                            <div class="form-text">You can select multiple images (Page 1, Page 2, etc.)</div>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary w-100">Upload Paper</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<%- include('../partials/footer') %>
