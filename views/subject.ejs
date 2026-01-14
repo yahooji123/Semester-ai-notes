@@ -1,0 +1,177 @@
+<%- include('partials/header') %>
+    <div class="row flex-nowrap h-100">
+        <!-- Sidebar -->
+        <div class="col-md-3 col-lg-3 d-none d-md-block" data-aos="fade-right">
+            <div class="sidebar p-3 rounded-3 shadow-sm sticky-top" style="top: 90px; height: 85vh;">
+                <a href="/" class="btn btn-light btn-sm w-100 mb-4 text-start fw-bold text-muted">
+                    <i class="fas fa-arrow-left me-2"></i> All Subjects
+                </a>
+                <h5 class="fw-bold mb-4 px-2 border-start border-4 border-primary ps-2"><%= subject.name %></h5>
+                
+                <% if (typeof chapters !== 'undefined') { %>
+                    <% for (const [chapter, topicList] of Object.entries(chapters)) { %>
+                        <div class="mb-3">
+                            <h6 class="text-uppercase text-muted fw-bold px-2 mb-2" style="font-size: 0.75rem;"><%= chapter %></h6>
+                            <div class="d-flex flex-column gap-1">
+                                <% topicList.forEach(topic => { %>
+                                    <a href="/subject/<%= subject._id %>?topicId=<%= topic._id %>" 
+                                    class="sidebar-link px-3 py-2 text-decoration-none d-flex align-items-center <%= activeTopic && activeTopic._id.toString() === topic._id.toString() ? 'active' : '' %>">
+                                        <% if (activeTopic && activeTopic._id.toString() === topic._id.toString()) { %>
+                                            <i class="fas fa-play-circle me-2 small"></i>
+                                        <% } else { %>
+                                            <i class="far fa-circle me-2 small text-muted" style="font-size: 0.6rem;"></i>
+                                        <% } %>
+                                        <span class="text-truncate"><%= topic.title %></span>
+                                    </a>
+                                <% }) %>
+                            </div>
+                        </div>
+                    <% } %>
+                <% } %>
+
+                <% if (typeof user !== 'undefined' && user && user.role === 'admin') { %>
+                    <div class="mt-4 pt-3 border-top">
+                        <a href="/admin/subject/<%= subject._id %>/add-topic" class="btn btn-dark btn-sm w-100 shadow-sm"><i class="fas fa-plus me-1"></i> Add New Topic</a>
+                    </div>
+                <% } %>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="col-md-9 col-lg-9 ms-md-auto px-4 pb-5">
+            <% if (activeTopic) { %>
+                <div class="content-wrapper" data-aos="fade-up">
+                    <!-- Header -->
+                    <div class="d-flex justify-content-between align-items-start border-bottom pb-3 mb-4">
+                        <div>
+                            <span class="badge bg-light text-primary border mb-2"><%= activeTopic.chapterName %></span>
+                            <h1 class="h2 fw-bold mb-0 text-dark"><%= activeTopic.title %></h1>
+                        </div>
+                        
+                        <% if (typeof user !== 'undefined' && user) { %>
+                            <div class="btn-group shadow-sm" role="group">
+                                <input type="radio" class="btn-check status-check" name="status" id="unread" value="unread" <%= (!userProgress || userProgress.status === 'unread') ? 'checked' : '' %>>
+                                <label class="btn btn-outline-secondary btn-sm" for="unread"><i class="far fa-eye-slash me-1"></i>Unread</label>
+
+                                <input type="radio" class="btn-check status-check" name="status" id="read" value="read" <%= (userProgress && userProgress.status === 'read') ? 'checked' : '' %>>
+                                <label class="btn btn-outline-success btn-sm" for="read"><i class="far fa-check-circle me-1"></i>Read</label>
+
+                                <input type="radio" class="btn-check status-check" name="status" id="revise" value="revise" <%= (userProgress && userProgress.status === 'revise') ? 'checked' : '' %>>
+                                <label class="btn btn-outline-warning btn-sm" for="revise"><i class="far fa-star me-1"></i>Revise</label>
+                            </div>
+                        <% } %>
+                    </div>
+
+                    <!-- Admin Delete -->
+                    <% if (typeof user !== 'undefined' && user && user.role === 'admin') { %>
+                        <div class="text-end mb-3">
+                            <form action="/admin/topic/<%= activeTopic._id %>?_method=DELETE" method="POST" class="d-inline">
+                                <button class="btn btn-sm btn-outline-danger" onclick="return confirm('Delete this topic?')"><i class="fas fa-trash me-1"></i> Delete Topic</button>
+                            </form>
+                        </div>
+                    <% } %>
+
+                    <!-- Content -->
+                    <div class="content-area mb-5">
+                        <%- activeTopic.content %>
+                    </div>
+
+                    <!-- Navigation Buttons -->
+                    <div class="d-flex justify-content-between mt-5 pt-4 border-top">
+                        <% if (prevTopic) { %>
+                            <a href="/subject/<%= subject._id %>?topicId=<%= prevTopic._id %>" class="btn btn-light border hover-card px-4">
+                                <i class="fas fa-arrow-left me-2"></i> Previous: <%= prevTopic.title %>
+                            </a>
+                        <% } else { %>
+                            <div></div>
+                        <% } %>
+
+                        <% if (nextTopic) { %>
+                            <a href="/subject/<%= subject._id %>?topicId=<%= nextTopic._id %>" class="btn btn-primary px-4 shadow-sm hover-card">
+                                Next: <%= nextTopic.title %> <i class="fas fa-arrow-right ms-2"></i>
+                            </a>
+                        <% } %>
+                    </div>
+
+                    <!-- Personal Notes -->
+                    <% if (typeof user !== 'undefined' && user) { %>
+                        <div class="mt-5 pt-3">
+                            <h5 class="fw-bold mb-3"><i class="fas fa-pen-fancy me-2 text-primary"></i>My Notes</h5>
+                            <div class="bg-light p-3 rounded-3 border">
+                                <textarea id="personalNote" class="form-control border-0 bg-white shadow-sm mb-3" rows="3" placeholder="Jot down key points, doubts, or summaries..."><%= userProgress ? userProgress.note : '' %></textarea>
+                                <div class="d-flex align-items-center">
+                                    <button id="saveNoteBtn" class="btn btn-dark btn-sm rounded-pill px-4">Save Note</button>
+                                    <span id="saveStatus" class="ms-3 text-success small fw-bold"></span>
+                                </div>
+                            </div>
+                        </div>
+                    <% } %>
+                </div>
+
+            <% } else { %>
+                <div class="text-center mt-5 pt-5" data-aos="zoom-in">
+                    <div class="p-5 bg-white rounded-3 shadow-sm d-inline-block">
+                        <i class="fas fa-book-reader fa-3x text-muted mb-4"></i>
+                        <h3 class="fw-bold">Select a topic to start</h3>
+                        <p class="text-muted">Choose a chapter from the sidebar to begin your study session.</p>
+                        <% if (typeof user !== 'undefined' && user && user.role === 'admin') { %>
+                             <a href="/admin/subject/<%= subject._id %>/add-topic" class="btn btn-primary mt-3">Create First Topic</a>
+                        <% } %>
+                    </div>
+                </div>
+            <% } %>
+        </div>
+    </div>
+
+    <!-- JavaScript for Progress Tracking -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const topicId = '<%= activeTopic ? activeTopic._id : "" %>';
+            if (!topicId) return;
+
+            // Handle Status Change
+            const statusRadios = document.querySelectorAll('.status-check');
+            statusRadios.forEach(radio => {
+                radio.addEventListener('change', (e) => {
+                    updateProgress(topicId, e.target.value, null);
+                });
+            });
+
+            // Handle Note Save
+            const saveBtn = document.getElementById('saveNoteBtn');
+            const noteArea = document.getElementById('personalNote');
+            const statusSpan = document.getElementById('saveStatus');
+
+            if (saveBtn) {
+                saveBtn.addEventListener('click', () => {
+                    statusSpan.innerText = 'Saving...';
+                    updateProgress(topicId, null, noteArea.value);
+                });
+            }
+
+            function updateProgress(topicId, status, note) {
+                const data = { topicId };
+                if (status) data.status = status;
+                if (note !== null) data.note = note;
+
+                fetch('/api/progress', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        if (note !== null) {
+                            statusSpan.innerText = 'Saved Successfully!';
+                            setTimeout(() => statusSpan.innerText = '', 2000);
+                        }
+                    } else {
+                        alert('Error saving progress');
+                    }
+                })
+                .catch(err => console.error(err));
+            }
+        });
+    </script>
+<%- include('partials/footer') %>

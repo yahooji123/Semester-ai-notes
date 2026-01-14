@@ -1,0 +1,38 @@
+<%- include('partials/header') %>
+    <div class="row justify-content-center mb-5" data-aos="fade-down">
+        <div class="col-lg-8 text-center">
+            <h2 class="fw-bold text-primary mb-4">Search Results for "<%= query %>"</h2>
+            <a href="/" class="btn btn-outline-secondary btn-sm mb-4"><i class="fas fa-arrow-left me-1"></i> Back to Home</a>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <% if (topics.length > 0) { %>
+            <% topics.forEach((topic, index) => { %>
+                <div class="col-12" data-aos="fade-up" data-aos-delay="<%= index * 50 %>">
+                    <div class="card border-0 shadow-sm hover-card p-3">
+                        <div class="card-body d-flex justify-content-between align-items-center">
+                            <div>
+                                <small class="text-uppercase text-muted fw-bold" style="font-size: 0.7rem;">
+                                    <%= topic.subject.name %> &bull; <%= topic.chapterName %>
+                                </small>
+                                <h4 class="card-title fw-bold text-dark mt-1 mb-0"><%= topic.title %></h4>
+                            </div>
+                            <a href="/subject/<%= topic.subject._id %>?topicId=<%= topic._id %>" class="btn btn-primary rounded-pill px-4">
+                                Read <i class="fas fa-arrow-right ms-2"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            <% }) %>
+        <% } else { %>
+            <div class="col-12 text-center" data-aos="zoom-in">
+                <div class="alert alert-light border shadow-sm p-5 rounded-3 d-inline-block">
+                    <i class="fas fa-search fa-3x text-muted mb-3"></i>
+                    <h4 class="fw-bold">No results found</h4>
+                    <p class="mb-0 text-muted">Try searching for a different keyword or topic.</p>
+                </div>
+            </div>
+        <% } %>
+    </div>
+<%- include('partials/footer') %>

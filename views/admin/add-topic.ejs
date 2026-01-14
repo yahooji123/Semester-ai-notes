@@ -1,0 +1,38 @@
+<%- include('../partials/header') %>
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow">
+                <div class="card-header bg-success text-white">
+                    Add Topic to: <%= subject.name %>
+                </div>
+                <div class="card-body">
+                    <form action="/admin/subject/<%= subject._id %>/add-topic" method="POST">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Chapter Name</label>
+                                <input type="text" name="chapterName" class="form-control" list="chapters" placeholder="e.g., Unit 1: Introduction" required>
+                                <datalist id="chapters">
+                                    <% chapters.forEach(chap => { %>
+                                        <option value="<%= chap %>">
+                                    <% }) %>
+                                </datalist>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Topic Title</label>
+                                <input type="text" name="title" class="form-control" placeholder="e.g., Big O Notation" required>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Content (Paste AI Notes Here)</label>
+                            <textarea id="summernote" name="content"></textarea>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary">Save Topic</button>
+                        <a href="/subject/<%= subject._id %>" class="btn btn-secondary ms-2">Cancel</a>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+<%- include('../partials/footer') %>

@@ -1,0 +1,53 @@
+<%- include('partials/header') %>
+    <!-- Hero / Search Section -->
+    <div class="row justify-content-center mb-5" data-aos="fade-down">
+        <div class="col-lg-8 text-center">
+            <h1 class="display-5 fw-bold text-primary mb-3">Master Your Subjects</h1>
+            <p class="lead text-muted mb-4">Find notes, track progress, and ace your exams.</p>
+            
+            <form action="/search" method="GET" class="search-wrapper">
+                <input type="text" name="q" class="form-control search-input" placeholder="Search for any topic (e.g. 'Binary Trees')..." autocomplete="off">
+            </form>
+        </div>
+    </div>
+
+    <!-- Subjects Grid -->
+    <div class="row g-4">
+        <% if (subjects.length > 0) { %>
+            <% subjects.forEach((subject, index) => { %>
+                <div class="col-md-4 col-lg-3" data-aos="fade-up" data-aos-delay="<%= index * 100 %>">
+                    <div class="card h-100 border-0 hover-card p-3">
+                        <div class="subject-icon">
+                            <i class="fas fa-book-open"></i>
+                        </div>
+                        <div class="card-body text-center p-0 pt-2">
+                            <h3 class="h5 fw-bold mb-2 text-dark"><%= subject.name %></h3>
+                            <p class="text-muted small mb-3"><%= subject.description || 'Comprehensive study notes' %></p>
+                            
+                            <% if (typeof progressMap !== 'undefined' && progressMap[subject._id]) { %>
+                                <div class="text-start mb-1 ms-1">
+                                    <small class="text-muted fw-bold" style="font-size: 0.7rem;">PROGRESS</small>
+                                </div>
+                                <div class="progress progress-slim mb-2" title="<%= progressMap[subject._id].percentage %>% Completed">
+                                    <div class="progress-bar progress-bar-custom" role="progressbar" style="width: <%= progressMap[subject._id].percentage %>%"></div>
+                                </div>
+                                <div class="d-flex justify-content-between">
+                                    <span class="badge bg-light text-dark border"><%= progressMap[subject._id].completed %>/<%= progressMap[subject._id].total %> Topics</span>
+                                </div>
+                            <% } %>
+
+                            <a href="/subject/<%= subject._id %>" class="btn btn-outline-primary w-100 rounded-pill mt-3 stretched-link">Start Learning</a>
+                        </div>
+                    </div>
+                </div>
+            <% }) %>
+        <% } else { %>
+            <div class="col-12 text-center" data-aos="zoom-in">
+                <div class="alert alert-light border shadow-sm p-4 rounded-3 d-inline-block">
+                    <i class="fas fa-box-open fa-3x text-muted mb-3"></i>
+                    <p class="mb-0">No subjects added yet. Login as Admin to add one!</p>
+                </div>
+            </div>
+        <% } %>
+    </div>
+<%- include('partials/footer') %>
