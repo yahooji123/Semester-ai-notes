@@ -18,6 +18,11 @@ const topicSchema = new mongoose.Schema({
     type: String, // HTML content from rich text editor
     required: true
   },
+  attachments: [{
+    filename: String,
+    path: String,
+    originalname: String
+  }],
   createdAt: {
     type: Date,
     default: Date.now

@@ -6,7 +6,7 @@
                     Add Topic to: <%= subject.name %>
                 </div>
                 <div class="card-body">
-                    <form action="/admin/subject/<%= subject._id %>/add-topic" method="POST">
+                    <form action="/admin/subject/<%= subject._id %>/add-topic" method="POST" enctype="multipart/form-data">
                         <div class="row">
                             <div class="col-md-6 mb-3">
                                 <label class="form-label">Chapter Name</label>
@@ -21,6 +21,12 @@
                                 <label class="form-label">Topic Title</label>
                                 <input type="text" name="title" class="form-control" placeholder="e.g., Big O Notation" required>
                             </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Attachments (PDF, Images, etc.)</label>
+                            <input type="file" name="attachments" class="form-control" multiple>
+                            <div class="form-text">You can select multiple files.</div>
                         </div>
 
                         <div class="mb-3">

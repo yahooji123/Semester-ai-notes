@@ -22,12 +22,21 @@
     
     <!-- Summernote for Rich Text -->
     <link href="https://cdn.jsdelivr.net/npm/summernote@0.8.18/dist/summernote-lite.min.css" rel="stylesheet">
+    <script>
+        // Check for saved dark mode preference
+        if (localStorage.getItem('theme') === 'dark') {
+            document.body.classList.add('dark-mode');
+        }
+    </script>
 </head>
 <body class="bg-light">
 
     <nav class="navbar navbar-expand-lg sticky-top">
         <div class="container">
             <a class="navbar-brand fw-bold" href="/"><i class="fas fa-graduation-cap me-2"></i>Semester Notes</a>
+            <button class="btn btn-sm btn-outline-dark ms-3 border-0" id="darkModeToggle">
+                <i class="fas fa-moon"></i>
+            </button>
             <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>
             </button>
@@ -50,3 +59,21 @@
     </nav>
 
     <div class="container py-4" style="min-height: 85vh;">
+
+    <!-- Global Announcements -->
+    <% if (typeof announcements !== 'undefined' && announcements.length > 0) { %>
+        <div class="row mb-4" data-aos="fade-down">
+            <div class="col-12">
+                <% announcements.forEach(ann => { %>
+                    <div class="alert alert-<%= ann.type === 'urgent' ? 'danger' : (ann.type === 'warning' ? 'warning' : 'info') %> border-0 shadow-sm d-flex align-items-center mb-2" role="alert">
+                        <i class="fas fa-bullhorn me-3 fa-lg"></i>
+                        <div>
+                            <strong>NOTICE:</strong> <%= ann.message %>
+                            <br>
+                            <small class="text-muted"><%= new Date(ann.createdAt).toLocaleDateString() %></small>
+                        </div>
+                    </div>
+                <% }) %>
+            </div>
+        </div>
+    <% } %>

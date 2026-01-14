@@ -1,4 +1,6 @@
 <%- include('partials/header') %>
+
+
     <!-- Hero / Search Section -->
     <div class="row justify-content-center mb-5" data-aos="fade-down">
         <div class="col-lg-8 text-center">
@@ -10,6 +12,85 @@
             </form>
         </div>
     </div>
+
+    <!-- Goal Setting System (Logged In Only) -->
+    <% if (typeof user !== 'undefined' && user) { %>
+        <div class="row mb-5" data-aos="fade-up">
+            <div class="col-12">
+                <div class="card border-0 shadow-sm bg-primary bg-opacity-10">
+                    <div class="card-body p-4">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h4 class="mb-0 fw-bold text-primary"><i class="fas fa-bullseye me-2"></i>My Study Goals</h4>
+                            <button class="btn btn-primary btn-sm rounded-pill px-3" data-bs-toggle="modal" data-bs-target="#addGoalModal">
+                                <i class="fas fa-plus me-1"></i> New Goal
+                            </button>
+                        </div>
+                        
+                        <div class="row g-3">
+                            <% if (typeof goals !== 'undefined' && goals.length > 0) { %>
+                                <% goals.forEach(goal => { %>
+                                    <div class="col-md-6 col-lg-4">
+                                        <div class="card h-100 border-0 shadow-sm <%= goal.completed ? 'bg-success bg-opacity-25' : 'bg-white' %>">
+                                            <div class="card-body d-flex align-items-center justify-content-between">
+                                                <div class="<%= goal.completed ? 'text-decoration-line-through text-muted' : '' %>">
+                                                    <h6 class="fw-bold mb-1"><%= goal.title %></h6>
+                                                    <small class="text-muted">Target: <%= new Date(goal.targetDate).toLocaleDateString() %></small>
+                                                </div>
+                                                <div class="d-flex align-items-center">
+                                                    <form action="/goals/<%= goal._id %>/toggle" method="POST" class="d-inline">
+                                                        <button class="btn btn-sm btn-link text-success p-0 me-2" title="Mark user as done">
+                                                            <i class="far <%= goal.completed ? 'fa-check-square' : 'fa-square' %> fa-lg"></i>
+                                                        </button>
+                                                    </form>
+                                                    <form action="/goals/<%= goal._id %>/delete" method="POST" class="d-inline">
+                                                        <button class="btn btn-sm btn-link text-danger p-0" onclick="return confirm('Remove this goal?')">
+                                                            <i class="fas fa-times"></i>
+                                                        </button>
+                                                    </form>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                <% }) %>
+                            <% } else { %>
+                                <div class="col-12 text-center text-muted py-3">
+                                    <small>No goals set yet. Set a target to stay motivated!</small>
+                                </div>
+                            <% } %>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Add Goal Modal -->
+        <div class="modal fade" id="addGoalModal" tabindex="-1">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Set New Goal</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <form action="/goals" method="POST">
+                        <div class="modal-body">
+                            <div class="mb-3">
+                                <label class="form-label">Goal</label>
+                                <input type="text" name="title" class="form-control" placeholder="e.g. Finish OS Unit 1" required>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Target Date</label>
+                                <input type="date" name="targetDate" class="form-control" required>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                            <button type="submit" class="btn btn-primary">Set Goal</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    <% } %>
 
     <!-- Subjects Grid -->
     <div class="row g-4">

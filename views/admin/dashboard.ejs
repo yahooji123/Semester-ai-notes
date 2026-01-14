@@ -1,26 +1,129 @@
 <%- include('../partials/header') %>
     <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2 class="text-secondary">Admin Dashboard</h2>
+        <h2 class="text-secondary fw-bold">Admin Dashboard</h2>
         <div>
-            <a href="/admin/subject/add" class="btn btn-primary">+ Add New Subject</a>
+            <a href="/admin/subject/add" class="btn btn-primary shadow-sm"><i class="fas fa-plus"></i> Add New Subject</a>
         </div>
     </div>
     
-    <!-- Registration Toggle Card -->
-    <div class="card mb-4 border-warning">
-        <div class="card-body d-flex justify-content-between align-items-center bg-light">
-            <div>
-                <h5 class="card-title">User Registration</h5>
-                <p class="card-text small text-muted">Currently: <strong class="<%= currentUser.isRegistrationEnabled ? 'text-success' : 'text-danger' %>"><%= currentUser.isRegistrationEnabled ? 'Enabled' : 'Disabled' %></strong></p>
+    <!-- Analytics Section -->
+    <div class="row mb-4">
+        <div class="col-md-6 mb-3">
+            <div class="card h-100 border-0 shadow-sm bg-primary text-white">
+                <div class="card-body">
+                    <h5 class="card-title"><i class="fas fa-chart-line me-2"></i>Most Read Subject</h5>
+                    <h2 class="display-6 fw-bold mt-3"><%= analytics.mostReadSubject._id || 'No Data' %></h2>
+                    <p class="mb-0 text-white-50"><%= analytics.mostReadSubject.count || 0 %> students completed</p>
+                </div>
             </div>
-            <form action="/admin/toggle-registration" method="POST">
-                <button class="btn <%= currentUser.isRegistrationEnabled ? 'btn-danger' : 'btn-success' %>">
-                    <%= currentUser.isRegistrationEnabled ? 'Disable Registration' : 'Enable Registration' %>
-                </button>
-            </form>
+        </div>
+        <div class="col-md-6 mb-3">
+            <div class="card h-100 border-0 shadow-sm">
+                <div class="card-header bg-warning fw-bold text-dark">
+                    <i class="fas fa-exclamation-triangle me-2"></i>Stuck Points (Most Revised)
+                </div>
+                <ul class="list-group list-group-flush">
+                    <% if (analytics.stuckTopics.length > 0) { %>
+                        <% analytics.stuckTopics.forEach(item => { %>
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                <span class="text-truncate"><%= item.topicDetails.title %></span>
+                                <span class="badge bg-warning text-dark rounded-pill"><%= item.count %> Revise</span>
+                            </li>
+                        <% }) %>
+                    <% } else { %>
+                        <li class="list-group-item text-muted">No revision data yet.</li>
+                    <% } %>
+                </ul>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Announcements & Settings -->
+    <div class="row mb-4">
+        <!-- Announcements -->
+        <div class="col-md-8">
+            <div class="card shadow-sm h-100">
+                <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                    <span class="fw-bold">Announcement Board</span>
+                    <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#addAnnouncementModal">
+                        <i class="fas fa-plus"></i> New Notice
+                    </button>
+                </div>
+                <div class="card-body p-0">
+                    <ul class="list-group list-group-flush">
+                        <% if (typeof announcements !== 'undefined' && announcements.length > 0) { %>
+                            <% announcements.forEach(ann => { %>
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    <div class="d-flex align-items-center">
+                                        <span class="badge bg-secondary me-2"><%= ann.type %></span>
+                                        <div class="text-truncate" style="max-width: 300px;"><%= ann.message %></div>
+                                    </div>
+                                    <form action="/admin/announcement/<%= ann._id %>/delete" method="POST" class="ms-2">
+                                        <button class="btn btn-sm btn-outline-danger border-0">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </form>
+                                </li>
+                            <% }) %>
+                        <% } else { %>
+                            <li class="list-group-item text-center text-muted py-3">No active announcements.</li>
+                        <% } %>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Registration Toggle Card -->
+        <div class="col-md-4">
+            <div class="card h-100 border-warning shadow-sm">
+                <div class="card-body text-center d-flex flex-column justify-content-center">
+                    <h5 class="card-title text-muted mb-3">User Registration</h5>
+                    <h3 class="fw-bold <%= currentUser.isRegistrationEnabled ? 'text-success' : 'text-danger' %> mb-3">
+                        <%= currentUser.isRegistrationEnabled ? 'ENABLED' : 'DISABLED' %>
+                    </h3>
+                    <form action="/admin/toggle-registration" method="POST">
+                        <button class="btn w-100 <%= currentUser.isRegistrationEnabled ? 'btn-danger' : 'btn-success' %>">
+                            <%= currentUser.isRegistrationEnabled ? 'Disable New Signups' : 'Enable New Signups' %>
+                        </button>
+                    </form>
+                </div>
+            </div>
         </div>
     </div>
 
+    <!-- Modal for Announcement -->
+    <div class="modal fade" id="addAnnouncementModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Post Announcement</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <form action="/admin/announcement" method="POST">
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="form-label">Message</label>
+                            <input type="text" name="message" class="form-control" placeholder="e.g. Exam on Monday" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Type</label>
+                            <select name="type" class="form-select">
+                                <option value="info">Info (Blue)</option>
+                                <option value="warning">Warning (Yellow)</option>
+                                <option value="urgent">Urgent (Red)</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                        <button type="submit" class="btn btn-primary">Post</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Subjects List -->
     <div class="row">
         <div class="col-12">
             <div class="card shadow-sm">

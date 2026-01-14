@@ -10,6 +10,58 @@
     --transition-speed: 0.3s;
 }
 
+body.dark-mode {
+    --bg-color: #0f172a;
+    --card-bg: #1e293b;
+    --text-main: #f1f5f9;
+    --text-muted: #94a3b8;
+    --sidebar-bg: #1e293b;
+    --primary-color: #818cf8;
+}
+
+body.dark-mode .navbar {
+    background: rgba(30, 41, 59, 0.95) !important;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+body.dark-mode .bg-light {
+    background-color: #0f172a !important;
+}
+body.dark-mode .bg-white {
+    background-color: #1e293b !important;
+}
+body.dark-mode .card {
+    background-color: var(--card-bg);
+    border-color: rgba(255,255,255,0.1);
+}
+body.dark-mode .list-group-item {
+    background-color: var(--card-bg);
+    border-color: rgba(255,255,255,0.1);
+    color: var(--text-main);
+}
+body.dark-mode .text-dark {
+    color: #f1f5f9 !important;
+}
+body.dark-mode .border {
+    border-color: rgba(255,255,255,0.1) !important;
+}
+body.dark-mode .sidebar {
+    background-color: var(--sidebar-bg);
+}
+body.dark-mode .sidebar-link {
+    color: var(--text-muted);
+}
+body.dark-mode .sidebar-link:hover, body.dark-mode .sidebar-link.active {
+    color: var(--primary-color);
+    background-color: rgba(99, 102, 241, 0.1);
+}
+body.dark-mode .modal-content {
+    background-color: var(--card-bg);
+    border: 1px solid rgba(255,255,255,0.1);
+}
+body.dark-mode .btn-close {
+    filter: invert(1) grayscale(100%) brightness(200%);
+}
+
 body {
     font-family: 'Poppins', sans-serif;
     background-color: var(--bg-color);

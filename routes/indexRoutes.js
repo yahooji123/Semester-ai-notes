@@ -3,6 +3,8 @@ const router = express.Router();
 const Subject = require('../models/Subject');
 const Topic = require('../models/Topic');
 const Progress = require('../models/Progress');
+const Goal = require('../models/Goal');
+const Announcement = require('../models/Announcement');
 const { isAuthenticated } = require('../middleware/auth');
 
 // Helper to escape regex
@@ -14,11 +16,16 @@ function escapeRegex(text) {
 router.get('/', async (req, res) => {
     try {
         const subjects = await Subject.find({});
+        // Announcements fetched via middleware
         
         let progressMap = {};
+        let goals = [];
         let user = req.session.userId; // Assuming userId is stored in session
 
         if (user) {
+            // Fetch User Goals
+            goals = await Goal.find({ user: user }).sort({ targetDate: 1 });
+
             // Calculate progress for each subject
             for (let sub of subjects) {
                 const totalTopics = await Topic.countDocuments({ subject: sub._id });
@@ -44,7 +51,7 @@ router.get('/', async (req, res) => {
             }
         }
 
-        res.render('index', { subjects, progressMap, user: req.session.user });
+        res.render('index', { subjects, progressMap, goals: goals || [] });
     } catch (err) {
         console.error(err);
         res.status(500).send('Server Error');
@@ -76,8 +83,7 @@ router.get('/search', async (req, res) => {
         res.render('search-results', { 
             query: req.query.q, 
             topics: topicResults, 
-            subjects: subjectResults,
-            user: req.session.user 
+            subjects: subjectResults
         });
 
     } catch (err) {
@@ -140,8 +146,7 @@ router.get('/subject/:id', async (req, res) => {
             activeTopic,
             prevTopic,
             nextTopic,
-            userProgress,
-            user: req.session.user
+            userProgress
         });
 
     } catch (err) {
@@ -175,6 +180,45 @@ router.post('/api/progress', isAuthenticated, async (req, res) => {
     } catch (err) {
         console.error(err);
         res.status(400).json({ success: false });
+    }
+});
+
+// Goal Routes
+router.post('/goals', isAuthenticated, async (req, res) => {
+    try {
+        await Goal.create({
+            user: req.session.userId,
+            title: req.body.title,
+            targetDate: req.body.targetDate
+        });
+        res.redirect('/');
+    } catch (err) {
+        console.error(err);
+        res.redirect('/');
+    }
+});
+
+router.post('/goals/:id/toggle', isAuthenticated, async (req, res) => {
+    try {
+        const goal = await Goal.findOne({ _id: req.params.id, user: req.session.userId });
+        if (goal) {
+            goal.completed = !goal.completed;
+            await goal.save();
+        }
+        res.redirect('/');
+    } catch (err) {
+        console.error(err);
+        res.redirect('/');
+    }
+});
+
+router.post('/goals/:id/delete', isAuthenticated, async (req, res) => {
+    try {
+        await Goal.findOneAndDelete({ _id: req.params.id, user: req.session.userId });
+        res.redirect('/');
+    } catch (err) {
+        console.error(err);
+        res.redirect('/');
     }
 });
 

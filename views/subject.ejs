@@ -46,20 +46,27 @@
                         <div>
                             <span class="badge bg-light text-primary border mb-2"><%= activeTopic.chapterName %></span>
                             <h1 class="h2 fw-bold mb-0 text-dark"><%= activeTopic.title %></h1>
+                            <small class="text-muted"><i class="far fa-clock me-1"></i> Posted on <%= new Date(activeTopic.createdAt).toLocaleDateString() %></small>
                         </div>
                         
-                        <% if (typeof user !== 'undefined' && user) { %>
-                            <div class="btn-group shadow-sm" role="group">
-                                <input type="radio" class="btn-check status-check" name="status" id="unread" value="unread" <%= (!userProgress || userProgress.status === 'unread') ? 'checked' : '' %>>
-                                <label class="btn btn-outline-secondary btn-sm" for="unread"><i class="far fa-eye-slash me-1"></i>Unread</label>
+                        <div class="d-flex align-items-center gap-2">
+                            <button class="btn btn-outline-dark btn-sm shadow-sm" onclick="downloadPDF()">
+                                <i class="fas fa-file-pdf me-1"></i> Save PDF
+                            </button>
 
-                                <input type="radio" class="btn-check status-check" name="status" id="read" value="read" <%= (userProgress && userProgress.status === 'read') ? 'checked' : '' %>>
-                                <label class="btn btn-outline-success btn-sm" for="read"><i class="far fa-check-circle me-1"></i>Read</label>
-
-                                <input type="radio" class="btn-check status-check" name="status" id="revise" value="revise" <%= (userProgress && userProgress.status === 'revise') ? 'checked' : '' %>>
-                                <label class="btn btn-outline-warning btn-sm" for="revise"><i class="far fa-star me-1"></i>Revise</label>
-                            </div>
-                        <% } %>
+                            <% if (typeof user !== 'undefined' && user) { %>
+                                <div class="btn-group shadow-sm" role="group">
+                                    <input type="radio" class="btn-check status-check" name="status" id="unread" value="unread" <%= (!userProgress || userProgress.status === 'unread') ? 'checked' : '' %>>
+                                    <label class="btn btn-outline-secondary btn-sm" for="unread"><i class="far fa-eye-slash me-1"></i>Unread</label>
+    
+                                    <input type="radio" class="btn-check status-check" name="status" id="read" value="read" <%= (userProgress && userProgress.status === 'read') ? 'checked' : '' %>>
+                                    <label class="btn btn-outline-success btn-sm" for="read"><i class="far fa-check-circle me-1"></i>Read</label>
+    
+                                    <input type="radio" class="btn-check status-check" name="status" id="revise" value="revise" <%= (userProgress && userProgress.status === 'revise') ? 'checked' : '' %>>
+                                    <label class="btn btn-outline-warning btn-sm" for="revise"><i class="far fa-star me-1"></i>Revise</label>
+                                </div>
+                            <% } %>
+                        </div>
                     </div>
 
                     <!-- Admin Delete -->
@@ -75,6 +82,34 @@
                     <div class="content-area mb-5">
                         <%- activeTopic.content %>
                     </div>
+
+                    <!-- Attachments Section -->
+                    <% if (activeTopic.attachments && activeTopic.attachments.length > 0) { %>
+                        <div class="card mb-4 border-0 shadow-sm">
+                            <div class="card-header bg-light fw-bold">
+                                <i class="fas fa-paperclip me-2"></i> Attachments / Resources
+                            </div>
+                            <ul class="list-group list-group-flush">
+                                <% activeTopic.attachments.forEach(file => { %>
+                                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                                        <div class="d-flex align-items-center">
+                                            <% if (file.filename.endsWith('.pdf')) { %>
+                                                <i class="fas fa-file-pdf text-danger me-3 fa-lg"></i>
+                                            <% } else if (file.filename.match(/\.(jpg|jpeg|png|gif)$/i)) { %>
+                                                <i class="fas fa-file-image text-primary me-3 fa-lg"></i>
+                                            <% } else { %>
+                                                <i class="fas fa-file-alt text-secondary me-3 fa-lg"></i>
+                                            <% } %>
+                                            <span><%= file.originalname %></span>
+                                        </div>
+                                        <a href="<%= file.path %>" class="btn btn-sm btn-outline-primary" download>
+                                            <i class="fas fa-download me-1"></i> Download
+                                        </a>
+                                    </li>
+                                <% }) %>
+                            </ul>
+                        </div>
+                    <% } %>
 
                     <!-- Navigation Buttons -->
                     <div class="d-flex justify-content-between mt-5 pt-4 border-top">
@@ -175,3 +210,21 @@
         });
     </script>
 <%- include('partials/footer') %>
+
+<!-- HTML2PDF Library -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+<script>
+    function downloadPDF() {
+        const element = document.querySelector('.content-area');
+        const opt = {
+            margin:       [10, 10], // Top/Bottom margin
+            filename:     '<%= activeTopic ? activeTopic.title : "document" %>.pdf',
+            image:        { type: 'jpeg', quality: 0.98 },
+            html2canvas:  { scale: 2, useCORS: true, letterRendering: true },
+            jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' },
+            pagebreak:    { mode: ['avoid-all', 'css', 'legacy'] }
+        };
+        // Use html2pdf to download
+        html2pdf().set(opt).from(element).save();
+    }
+</script>
