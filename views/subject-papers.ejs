@@ -70,94 +70,31 @@
                                     <p class="text-muted mb-0"><%= paper.year %></p>
                                 </div>
                                 <div class="card-footer bg-white border-top-0 pb-3">
-                                    <div class="d-flex gap-2">
-                                        <button class="btn btn-outline-primary flex-grow-1" data-bs-toggle="modal" data-bs-target="#paperModal<%= paper._id %>">
-                                            <i class="far fa-eye me-2"></i> View
-                                        </button>
+                                    <div class="d-grid gap-2">
                                         <% if (paper.images && paper.images.length > 0) { %>
-                                            <a href="<%= paper.images[0].url.replace('/upload/', '/upload/fl_attachment/') %>" class="btn btn-success" title="Download Paper">
-                                                <i class="fas fa-download"></i>
-                                            </a>
-                                        <% } %>
-                                    </div>
-                                </div>
-                            </div>
-
-                        <!-- Modal (PDF Style Viewer) -->
-                            <div class="modal fade" id="paperModal<%= paper._id %>" tabindex="-1" aria-hidden="true">
-                                <div class="modal-dialog modal-fullscreen">
-                                    <div class="modal-content" style="background-color: #323639;"> <!-- Chrome PDF Viewer Dark Gray -->
-                                        
-                                        <!-- Header (Fixed) -->
-                                        <div class="modal-header border-bottom border-dark py-2 px-4" style="background-color: #202124; color: #f1f3f4;">
-                                            <div class="d-flex align-items-center w-100">
-                                                <div class="d-flex align-items-center me-auto text-truncate">
-                                                    <i class="fas fa-file-pdf text-danger me-3 fa-lg"></i>
-                                                    <div>
-                                                        <h6 class="mb-0 fw-bold text-truncate" style="max-width: 300px;"><%= paper.title %></h6>
-                                                        <small class="text-secondary"><%= paper.year || 'Unknown Year' %></small>
-                                                    </div>
-                                                </div>
-
-                                                <div class="d-flex align-items-center gap-2">
-                                                    <% if (paper.images && paper.images.length > 0) { %>
-                                                        <a href="<%= paper.images[0].url.replace('/upload/', '/upload/fl_attachment/') %>" class="btn btn-sm btn-outline-light border-0" title="Download">
-                                                            <i class="fas fa-download"></i>
-                                                        </a>
-                                                    <% } %>
-                                                    <div class="vr bg-secondary mx-2"></div>
-                                                    <button type="button" class="btn btn-sm btn-outline-light border-0 rounded-circle p-2" data-bs-dismiss="modal" aria-label="Close" style="width: 36px; height: 36px;">
-                                                        <i class="fas fa-times fa-lg"></i>
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        <!-- Body (Scrollable Stream) -->
-                                        <div class="modal-body p-0 overflow-auto" style="background-color: #525659;">
-                                            <% if (paper.images && paper.images.length > 0) { %>
-                                                <div class="container-fluid py-5">
-                                                    <div class="d-flex flex-column align-items-center gap-4">
-                                                        
-                                                        <% paper.images.forEach((img, index) => { %>
-                                                            <div class="paper-page shadow-lg bg-white position-relative" style="width: 100%; max-width: 850px;">
-                                                                <img src="<%= img.url %>" 
-                                                                     class="w-100 h-auto d-block" 
-                                                                     alt="Page <%= index + 1 %>"
-                                                                     loading="lazy"
-                                                                     style="min-height: 400px; background-color: white;"> <!-- Default bg helps white feel -->
-                                                                
-                                                                <!-- Page Number Overlay (Subtle) -->
-                                                                <div class="position-absolute top-0 start-0 m-0 px-2 py-1 bg-dark text-white opacity-50 small font-monospace" style="border-bottom-right-radius: 4px;">
-                                                                    <%= index + 1 %> / <%= paper.images.length %>
-                                                                </div>
-
-                                                                <!-- Download Page Button -->
-                                                                <div class="position-absolute top-0 end-0 m-2">
-                                                                    <a href="<%= img.url.replace('/upload/', '/upload/fl_attachment/') %>" class="btn btn-sm btn-dark bg-opacity-75 text-white border-0 shadow-sm" title="Download Page <%= index + 1 %>">
-                                                                        <i class="fas fa-download"></i>
-                                                                    </a>
-                                                                </div>
-                                                            </div>
-                                                        <% }) %>
-
-                                                    </div>
-                                                    
-                                                    <!-- End of Document Indicator -->
-                                                    <div class="text-center mt-5 text-white-50">
-                                                        <small>&mdash; End of Document &mdash;</small>
-                                                    </div>
-                                                </div>
+                                            <% if (paper.images.length === 1) { %>
+                                                <a href="<%= paper.images[0].url.replace('/upload/', '/upload/fl_attachment/') %>" class="btn btn-success" title="Download Paper">
+                                                    <i class="fas fa-download me-2"></i> Download
+                                                </a>
                                             <% } else { %>
-                                                <div class="d-flex justify-content-center align-items-center h-100 text-white-50">
-                                                    <div class="text-center">
-                                                        <i class="far fa-file-image fa-4x mb-3 text-secondary"></i>
-                                                        <p class="mb-0">No pages available</p>
-                                                    </div>
+                                                <div class="dropdown">
+                                                    <button class="btn btn-success w-100 dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                                        <i class="fas fa-download me-2"></i> Download (<%= paper.images.length %> Pages)
+                                                    </button>
+                                                    <ul class="dropdown-menu w-100">
+                                                        <% paper.images.forEach((img, index) => { %>
+                                                            <li>
+                                                                <a class="dropdown-item" href="<%= img.url.replace('/upload/', '/upload/fl_attachment/') %>">
+                                                                    <i class="fas fa-file-image me-2 text-muted"></i> Page <%= index + 1 %>
+                                                                </a>
+                                                            </li>
+                                                        <% }) %>
+                                                    </ul>
                                                 </div>
                                             <% } %>
-                                        </div>
-
+                                        <% } else { %>
+                                            <button class="btn btn-secondary" disabled>No Files</button>
+                                        <% } %>
                                     </div>
                                 </div>
                             </div>
