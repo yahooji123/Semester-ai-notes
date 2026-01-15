@@ -6,6 +6,7 @@ const Paper = require('../models/Paper');
 const Progress = require('../models/Progress');
 const Goal = require('../models/Goal');
 const Announcement = require('../models/Announcement');
+const Comment = require('../models/Comment');
 const { isAuthenticated } = require('../middleware/auth');
 
 // Helper to escape regex
@@ -141,13 +142,22 @@ router.get('/subject/:id', async (req, res) => {
             });
         }
 
+        // Fetch Comments for Active Topic
+        let comments = [];
+        if (activeTopic) {
+            comments = await Comment.find({ topic: activeTopic._id })
+                .populate('user', 'username role') // Get username and role
+                .sort({ createdAt: -1 });
+        }
+
         res.render('subject', {
             subject,
             chapters,
             activeTopic,
             prevTopic,
             nextTopic,
-            userProgress
+            userProgress,
+            comments
         });
 
     } catch (err) {
@@ -249,6 +259,63 @@ router.post('/goals/:id/delete', isAuthenticated, async (req, res) => {
     } catch (err) {
         console.error(err);
         res.redirect('/');
+    }
+});
+
+// --- COMMENT ROUTES ---
+
+// Add Comment
+router.post('/subject/:id/topic/:topicId/comment', isAuthenticated, async (req, res) => {
+    try {
+        const { id, topicId } = req.params;
+        const { content } = req.body;
+
+        await Comment.create({
+            topic: topicId,
+            user: req.session.userId,
+            content
+        });
+
+        res.redirect(`/subject/${id}?topicId=${topicId}#comments-section`);
+    } catch (err) {
+        console.error(err);
+        // Redirect back even on error for now
+        res.redirect(`/subject/${req.params.id}?topicId=${req.params.topicId}`);
+    }
+});
+
+// Delete Comment (Author or Admin)
+router.post('/comment/:id/delete', isAuthenticated, async (req, res) => {
+    try {
+        const comment = await Comment.findById(req.params.id).populate('topic');
+        const user = req.user; // Assuming populated by middleware, or fetch from DB
+        // Wait, req.user might not be set by simple session middleware. Let's fetch the user or rely on session.
+        // Actually simplest is to check against session ID or Fetch user role from DB if needed for admin check.
+        // BUT isAuthenticated middleware usually doesn't populate req.user unless it's full Passport/Session setup.
+        // Looking at adminRoutes, it fetches user manually.
+
+        if (!comment) return res.redirect('back');
+
+        // Check ownership or admin status
+        // Since we don't have the user object fully loaded in req in previous code, let's fetch it or just check ID.
+        // If we want admin to delete, we need to know if current user is admin.
+        
+        // Simpler check:
+        const currentUserId = req.session.userId;
+        // Fetch current user to check role if not owner
+        const currentUser = await require('../models/User').findById(currentUserId);
+        
+        if (comment.user.toString() === currentUserId || (currentUser && currentUser.role === 'admin')) {
+            await Comment.findByIdAndDelete(req.params.id);
+        }
+
+        const subjectId = comment.topic.subject;
+        const topicId = comment.topic._id;
+        res.redirect(`/subject/${subjectId}?topicId=${topicId}#comments-section`);
+
+    } catch (err) {
+        console.error(err);
+        res.redirect('back');
     }
 });
 

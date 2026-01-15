@@ -128,21 +128,36 @@
     <div class="row">
         <div class="col-12">
             <div class="card shadow-sm">
-                <div class="card-header bg-white d-flex justify-content-between align-items-center">
-                    <span class="fw-bold">Manage Course Content</span>
+                
+                <!-- Updated Header with Dropdown -->
+                <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center flex-wrap gap-3">
+                    <span class="fw-bold h5 mb-0"><i class="fas fa-layer-group me-2 text-primary"></i>Manage Course Content</span>
+                    
+                    <div class="dropdown">
+                        <button class="btn btn-outline-primary shadow-sm dropdown-toggle px-4 py-2 fw-medium rounded-pill d-flex align-items-center gap-2 transition-all" 
+                                type="button" 
+                                id="adminSemDropdown" 
+                                data-bs-toggle="dropdown" 
+                                aria-expanded="false" 
+                                style="min-width: 170px; justify-content: space-between;">
+                            <span>Semester 1</span>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end shadow-lg border-0 mt-2 p-2 rounded-3" aria-labelledby="adminSemDropdown">
+                            <% for(let i=1; i<=8; i++) { %>
+                                <li>
+                                    <button class="dropdown-item rounded-2 py-2 mb-1 d-flex justify-content-between align-items-center <%= i===1 ? 'active-sem-admin' : '' %>" 
+                                            type="button" 
+                                            onclick="filterAdminSemester(<%= i %>, this)">
+                                        <span>Semester <%= i %></span>
+                                        <% if(i===1) { %><i class="fas fa-check text-primary check-icon"></i><% } %>
+                                    </button>
+                                </li>
+                            <% } %>
+                        </ul>
+                    </div>
                 </div>
-                <div class="card-body">
-                    <!-- Nav Tabs -->
-                    <ul class="nav nav-pills mb-4 gap-2 border-bottom pb-3" id="semesterTabs" role="tablist" style="overflow-x: auto; flex-wrap: nowrap;">
-                        <% for(let i=1; i<=8; i++) { %>
-                            <li class="nav-item" role="presentation">
-                                <button class="nav-link <%= i===1 ? 'active' : '' %>" id="sem-<%= i %>-tab" data-bs-toggle="pill" data-bs-target="#sem-<%= i %>" type="button" role="tab">
-                                    Semester <%= i %>
-                                </button>
-                            </li>
-                        <% } %>
-                    </ul>
 
+                <div class="card-body">
                     <!-- Tab Content -->
                     <div class="tab-content" id="semesterTabsContent">
                         <% for(let i=1; i<=8; i++) { %>
@@ -233,4 +248,50 @@
             </div>
         </div>
     </div>
+    
+    <script>
+        function filterAdminSemester(sem, btn) {
+            // Hide all tab panes
+            const allPanes = document.querySelectorAll('.tab-pane');
+            allPanes.forEach(pane => {
+                pane.classList.remove('show', 'active');
+            });
+            
+            // Show target pane
+            const targetPane = document.getElementById('sem-' + sem);
+            if (targetPane) {
+                targetPane.classList.add('active');
+                setTimeout(() => targetPane.classList.add('show'), 10);
+            }
+            
+            // Update Dropdown Button Text
+            const dropdownBtn = document.getElementById('adminSemDropdown');
+            dropdownBtn.querySelector('span').innerText = 'Semester ' + sem;
+            
+            // Update Active State in Dropdown Menu
+            const allItems = document.querySelectorAll('.dropdown-item');
+            allItems.forEach(item => {
+                item.classList.remove('active-sem-admin');
+                const icon = item.querySelector('.check-icon');
+                if (icon) icon.remove();
+            });
+            
+            // Set Active class and icon to clicked button
+            btn.classList.add('active-sem-admin');
+            btn.insertAdjacentHTML('beforeend', '<i class="fas fa-check text-primary check-icon"></i>');
+        }
+    </script>
+    
+    <style>
+        .active-sem-admin {
+            background-color: var(--bs-light);
+            color: var(--bs-primary);
+            font-weight: 600;
+        }
+        .dropdown-item:hover {
+            background-color: var(--bs-light);
+            transform: translateX(3px);
+            transition: all 0.2s;
+        }
+    </style>
 <%- include('../partials/footer') %>

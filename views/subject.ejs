@@ -150,6 +150,85 @@
                             </div>
                         </div>
                     <% } %>
+
+                    <!-- Discussion / Doubt Section -->
+                    <div class="mt-5 pt-3 border-top" id="comments-section">
+                        <div class="d-flex justify-content-between align-items-center mb-4">
+                            <h5 class="fw-bold m-0"><i class="fas fa-comments me-2 text-primary"></i>Discussion & Doubts</h5>
+                            <span class="badge bg-light text-dark"><%= (typeof comments !== 'undefined' && comments) ? comments.length : 0 %> Comments</span>
+                        </div>
+
+                        <!-- Comment Form -->
+                        <% if (typeof user !== 'undefined' && user) { %>
+                            <div class="card border-0 shadow-sm mb-4">
+                                <div class="card-body bg-light rounded-3">
+                                    <form action="/subject/<%= subject._id %>/topic/<%= activeTopic._id %>/comment" method="POST">
+                                        <div class="d-flex gap-3">
+                                            <div class="flex-shrink-0">
+                                                <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px; font-weight: bold;">
+                                                    <i class="fas fa-user"></i> 
+                                                </div>
+                                            </div>
+                                            <div class="flex-grow-1">
+                                                <textarea name="content" class="form-control border-0 shadow-sm mb-2" rows="2" placeholder="Ask a question or share a thought..." required></textarea>
+                                                <div class="text-end">
+                                                    <button type="submit" class="btn btn-primary btn-sm px-4 rounded-pill">Post Comment</button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        <% } else { %>
+                            <div class="alert alert-light border text-center mb-4">
+                                <a href="/login" class="text-decoration-none fw-bold">Login</a> to join the discussion.
+                            </div>
+                        <% } %>
+
+                        <!-- Comments List -->
+                        <div class="comments-list">
+                            <% if (typeof comments !== 'undefined' && comments && comments.length > 0) { %>
+                                <% comments.forEach(comment => { %>
+                                    <div class="d-flex gap-3 mb-4">
+                                        <div class="flex-shrink-0">
+                                            <div class="<%= comment.user && comment.user.role === 'admin' ? 'bg-danger' : 'bg-secondary' %> text-white rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px; font-size: 0.8rem;">
+                                                <% if (comment.user && comment.user.role === 'admin') { %>
+                                                    <i class="fas fa-crown"></i>
+                                                <% } else { %>
+                                                    <i class="fas fa-user-graduate"></i>
+                                                <% } %>
+                                            </div>
+                                        </div>
+                                        <div class="flex-grow-1">
+                                            <div class="bg-white p-3 rounded-3 shadow-sm border position-relative">
+                                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                                    <div>
+                                                        <span class="fw-bold text-dark me-2"><%= comment.user ? comment.user.username : 'Unknown User' %></span>
+                                                        <% if (comment.user && comment.user.role === 'admin') { %>
+                                                            <span class="badge bg-danger py-0" style="font-size: 0.6rem;">ADMIN</span>
+                                                        <% } %>
+                                                        <span class="text-muted small ms-2"><i class="far fa-clock me-1"></i><%= new Date(comment.createdAt).toLocaleDateString() %></span>
+                                                    </div>
+                                                    
+                                                    <% if (typeof user !== 'undefined' && user && comment.user && (user.role === 'admin' || user._id.toString() === comment.user._id.toString())) { %>
+                                                        <form action="/comment/<%= comment._id %>/delete" method="POST" class="d-inline" onsubmit="return confirm('Delete this comment?')">
+                                                            <button type="submit" class="btn btn-link text-muted p-0" style="font-size: 0.8rem;"><i class="fas fa-trash"></i></button>
+                                                        </form>
+                                                    <% } %>
+                                                </div>
+                                                <p class="mb-0 text-secondary" style="white-space: pre-wrap; font-size: 0.95rem;"><%= comment.content %></p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                <% }) %>
+                            <% } else { %>
+                                <div class="text-center text-muted py-3">
+                                    <i class="far fa-comments fa-2x mb-2 opacity-50"></i>
+                                    <p class="small">No comments yet. Be the first to start a conversation!</p>
+                                </div>
+                            <% } %>
+                        </div>
+                    </div>
                 </div>
 
             <% } else { %>
