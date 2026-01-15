@@ -1,112 +1,137 @@
 const express = require('express');
 const router = express.Router();
 const User = require('../models/User');
-const bcrypt = require('bcryptjs');
+const SystemSettings = require('../models/SystemSettings');
+const { isAdmin } = require('../middleware/auth');
 
-// Login Page
 router.get('/login', (req, res) => {
-  res.render('login', { error: null });
+    if (req.session.userId) return res.redirect('/');
+    res.render('login', { error: null });
 });
 
-// Login Handlder
+router.get('/admin/login', (req, res) => {
+    if (req.session.userId && req.session.role === 'admin') return res.redirect('/admin');
+    res.render('admin-login', { error: null });
+});
+
+router.post('/admin/toggle-student-login', isAdmin, async (req, res) => {
+    try {
+        let settings = await SystemSettings.findOne();
+        if (!settings) settings = new SystemSettings();
+        settings.studentLoginEnabled = !settings.studentLoginEnabled;
+        await settings.save();
+        res.redirect('/admin');
+    } catch (err) {
+        console.error(err);
+        res.redirect('/admin');
+    }
+});
+
 router.post('/login', async (req, res) => {
-  const { username, password } = req.body;
-  try {
-    const user = await User.findOne({ username });
-    if (!user) {
-        return res.render('login', { error: 'Invalid credentials' });
-    }
-    const isMatch = await user.comparePassword(password);
-    if (!isMatch) {
-         return res.render('login', { error: 'Invalid credentials' });
-    }
-
-    req.session.userId = user._id;
-    req.session.username = user.username;
-    req.session.role = user.role;
-    req.session.user = user; // Set full user object for views
-    res.redirect('/');
-  } catch (err) {
-    console.error(err);
-    res.render('login', { error: 'Server error' });
-  }
-});
-
-// Logout
-router.get('/logout', (req, res) => {
-  req.session.destroy(() => {
-    res.redirect('/');
-  });
-});
-
-// Register Page (Smart logic)
-router.get('/register', async (req, res) => {
-  try {
-    const userCount = await User.countDocuments();
+    const { username, password, loginType } = req.body;
     
-    // Allow if no users exist (First Admin)
-    if (userCount === 0) {
-      return res.render('register', { error: null, message: 'Welcome! Create the Main Admin account.' });
+    try {
+        if (loginType !== 'admin') {
+            const settings = await SystemSettings.findOne();
+            if (settings && !settings.studentLoginEnabled) {
+                return res.render('login', { error: 'Student login is currently disabled by the Administrator.' });
+            }
+        }
+
+        let user;
+        if (loginType === 'admin') {
+            user = await User.findOne({ username: username });
+        } else {
+            user = await User.findOne({ 
+                $or: [{ email: username.toLowerCase() }, { username: username.toLowerCase() }] 
+            });
+        }
+
+        if (!user) {
+            const view = loginType === 'admin' ? 'admin-login' : 'login';
+            return res.render(view, { error: 'Invalid credentials' });
+        }
+
+        if (loginType !== 'admin' && user.role === 'admin') {
+            return res.render('login', { error: 'Admins must use the Dedicated Admin Portal.' });
+        }
+        if (loginType === 'admin' && user.role !== 'admin') {
+            return res.render('admin-login', { error: 'Access Denied: This portal is for Admins only.' });
+        }
+
+        const isMatch = await user.comparePassword(password);
+        if (!isMatch) {
+            const view = loginType === 'admin' ? 'admin-login' : 'login';
+             return res.render(view, { error: 'Invalid credentials' });
+        }
+
+        req.session.userId = user._id;
+        req.session.username = user.username;
+        req.session.role = user.role;
+
+        res.redirect(user.role === 'admin' ? '/admin' : '/');
+
+    } catch (err) {
+        console.error('Login Error:', err);
+        res.render(loginType === 'admin' ? 'admin-login' : 'login', { error: 'Server Error' });
     }
-
-    // If users exist, only logged-in Admins can register others
-    if (req.session.userId && req.session.role === 'admin') {
-         // Check if current admin has rights? For now assume all admins can, or just Main.
-         // Let's implement the specific requirement: "main admin... uske enable disable kr sakega"
-         // This implies a toggle. 
-         const currentUser = await User.findById(req.session.userId);
-         if(currentUser.isRegistrationEnabled) {
-            return res.render('register', { error: null, message: 'Register a new user.' });
-         } else {
-             return res.render('admin/dashboard', { error: 'Registration is disabled by Main Admin.', success: null, subjects: [] }); // Simplification, ideally redirect
-         }
-    }
-
-    // Default: Redirect to login
-    res.redirect('/login');
-
-  } catch (err) {
-    console.error(err);
-    res.redirect('/login');
-  }
 });
 
-// Register Handler
+router.get('/register', async (req, res) => {
+    if (req.session.userId) return res.redirect('/');
+    try {
+        const userCount = await User.countDocuments();
+        if (userCount === 0) {
+            return res.render('register', { message: 'System Setup: Create Main Admin Account.', error: null, isSetup: true });
+        }
+        const mainAdmin = await User.findOne({ role: 'admin' }).sort({ createdAt: 1 });
+        if (mainAdmin && mainAdmin.isRegistrationEnabled === false) {
+             return res.render('login', { error: 'Registration is closed.' });
+        }
+        res.render('register', { message: null, error: null, isSetup: false });
+    } catch (err) { res.redirect('/'); }
+});
+
 router.post('/register', async (req, res) => {
-  const { username, password } = req.body;
-  try {
-    const userCount = await User.countDocuments();
-    let role = 'student'; // Default role
-    let isRegistrationEnabled = false;
+    try {
+        const { name, email, semester, password } = req.body;
+        const userCount = await User.countDocuments();
 
-    if (userCount === 0) {
-      role = 'admin';
-      isRegistrationEnabled = true; // Main admin can register others by default? Or enables it?
-      // "admin login krne ke baad aur koi register karega ya ni uske enable aur disable kr sakega"
-      // Suggests defaults to false, but he can turn it on.
-      // But if count is 0, this IS the registration.
-    } else {
-        // If not first user, ensure requester is authorized
-        if (!req.session.userId) return res.status(403).send("Unauthorized");
-        // Could force role selection here if needed
+        if (!email || !password) return res.render('register', { error: 'Missing fields', message: null, isSetup: userCount===0 });
+
+        const existingUser = await User.findOne({ $or: [{ email: email }, { username: email }] });
+        if (existingUser) return res.render('register', { error: 'Email already registered.', message: null, isSetup: userCount===0 });
+
+        let newUser;
+        if (userCount === 0) {
+            newUser = new User({
+                name: name || 'Admin',
+                email: email.toLowerCase(),
+                username: 'admin',
+                password: password,
+                role: 'admin',
+                semester: null
+            });
+        } else {
+            newUser = new User({
+                name: name,
+                email: email.toLowerCase(),
+                username: email.toLowerCase(),
+                password: password,
+                semester: semester || 1,
+                role: 'student'
+            });
+        }
+        await newUser.save();
+        res.redirect(userCount === 0 ? '/admin/login' : '/login');
+    } catch (err) {
+        console.error(err);
+        res.render('register', { error: 'Registration failed.', message: null, isSetup: false });
     }
+});
 
-    const newUser = new User({ username, password, role, isRegistrationEnabled });
-    await newUser.save();
-
-    if (userCount === 0) {
-      // Login immediately if first user
-      req.session.userId = newUser._id;
-      req.session.username = newUser.username;
-      req.session.role = newUser.role;
-      return res.redirect('/admin');
-    }
-
-    res.redirect('/admin'); // Redirect back to admin dashboard
-  } catch (err) {
-    console.error(err);
-    res.render('register', { error: 'Error creating user (Username might be taken)', message: null });
-  }
+router.get('/logout', (req, res) => {
+    req.session.destroy(() => res.redirect('/'));
 });
 
 module.exports = router;

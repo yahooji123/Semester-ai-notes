@@ -1,29 +1,69 @@
 <%- include('partials/header') %>
     <div class="row justify-content-center mt-5">
-        <div class="col-md-4">
-            <div class="card shadow">
-                <div class="card-body">
-                    <h3 class="text-center mb-4">Register User</h3>
+        <div class="col-md-5 col-lg-4">
+            <div class="card shadow-lg border-0 rounded-4">
+                <div class="card-body p-4">
+                    <h3 class="text-center fw-bold text-primary mb-4">Student Registration</h3>
                     
                     <% if (message) { %>
-                        <div class="alert alert-info"><%= message %></div>
+                        <div class="alert alert-info border-0 shadow-sm"><i class="fas fa-info-circle me-2"></i><%= message %></div>
                     <% } %>
                     
                     <% if (error) { %>
-                        <div class="alert alert-danger"><%= error %></div>
+                        <div class="alert alert-danger border-0 shadow-sm"><i class="fas fa-exclamation-circle me-2"></i><%= error %></div>
                     <% } %>
 
                     <form action="/register" method="POST">
                         <div class="mb-3">
-                            <label class="form-label">Username</label>
-                            <input type="text" name="username" class="form-control" required>
+                            <label class="form-label fw-bold small text-muted">Full Name</label>
+                            <input type="text" name="name" class="form-control" placeholder="John Doe" required>
                         </div>
+
                         <div class="mb-3">
-                            <label class="form-label">Password</label>
+                            <label class="form-label fw-bold small text-muted">Email Address</label>
+                            <input type="email" name="email" class="form-control" placeholder="john@example.com" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold small text-muted">Semester</label>
+                            <select name="semester" class="form-select" required>
+                                <% for(let i=1; i<=8; i++) { %>
+                                    <option value="<%= i %>">Semester <%= i %></option>
+                                <% } %>
+                            </select>
+                        </div>
+
+                        <!-- Username is still required by schema, we can auto-generate or ask.
+                             The prompt says "login with email", but Schema has username required.
+                             Let's keep asking for a username or just use email as username behind scenes?
+                             The prompt says "Some detailed fill... like name,email,password,semester".
+                             It did NOT mention username explicitly for students, but our system is built on username.
+                             Let's ask for username to avoid breaking legacy admin structure, OR derive it.
+                             "Student login krne per uska naam profile me..."
+                             Let's ask for username to be safe, or just hide it and set it to email.
+                             Let's ASK for it to be explicit, or change label to "User ID".
+                             Actually, let's just use Email as the Username for students if we can, 
+                             BUT Schema has unique Username. If I use email as username, it works.
+                        -->
+                        <!-- Actually simpler: Students register with username (as ID) OR Just Email.
+                             Prompt: "student uske register ki hui email aur password se login kr sakega"
+                             So Login = Email + Password.
+                             Registration = Name, Email, Password, Semester.
+                             Backend: Set username = email.
+                        -->
+                        
+                        <div class="mb-4">
+                            <label class="form-label fw-bold small text-muted">Password</label>
                             <input type="password" name="password" class="form-control" required>
                         </div>
-                        <button type="submit" class="btn btn-success w-100">Create Account</button>
+
+                        <button type="submit" class="btn btn-primary w-100 py-2 rounded-pill fw-bold shadow-sm">Create Account</button>
                     </form>
+
+                    <div class="text-center mt-3">
+                        <span class="text-muted small">Already have an account?</span>
+                        <a href="/login" class="text-decoration-none fw-bold">Login</a>
+                    </div>
                 </div>
             </div>
         </div>

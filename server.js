@@ -18,6 +18,17 @@ const { injectUser } = require('./middleware/context');
 // Initialize App
 const app = express();
 
+
+// --- CRON JOB: Recalculate Leaderboard every 1 hour ---
+const User = require('./models/User');
+setInterval(() => {
+    User.recalculateScores().catch(err => console.error('Leaderboard Update Error:', err));
+}, 1000 * 60 * 60); // 1 hour
+// Run once on startup for development testing
+setTimeout(() => {
+    User.recalculateScores().catch(e => console.error(e));
+}, 5000); 
+
 /**
  * Database Connection (MongoDB)
  */
@@ -56,6 +67,7 @@ app.use(injectUser);
 app.use('/', require('./routes/indexRoutes')); // Public Routes
 app.use('/', require('./routes/authRoutes'));  // Authentication
 app.use('/admin', require('./routes/adminRoutes')); // Admin Panel
+app.use('/profile', require('./routes/userRoutes')); // User Profile
 
 /**
  * Server Start

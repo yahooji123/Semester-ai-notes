@@ -73,7 +73,7 @@
                                     <div class="d-grid gap-2">
                                         <% if (paper.images && paper.images.length > 0) { %>
                                             <% if (paper.images.length === 1) { %>
-                                                <a href="<%= paper.images[0].url.replace('/upload/', '/upload/fl_attachment/') %>" class="btn btn-success" title="Download Paper">
+                                                <a href="/paper/download/<%= paper._id %>?url=<%= encodeURIComponent(paper.images[0].url.replace('/upload/', '/upload/fl_attachment/')) %>" class="btn btn-success" title="Download Paper">
                                                     <i class="fas fa-download me-2"></i> Download
                                                 </a>
                                             <% } else { %>
@@ -84,7 +84,7 @@
                                                     <ul class="dropdown-menu w-100">
                                                         <% paper.images.forEach((img, index) => { %>
                                                             <li>
-                                                                <a class="dropdown-item" href="<%= img.url.replace('/upload/', '/upload/fl_attachment/') %>">
+                                                                <a class="dropdown-item" href="/paper/download/<%= paper._id %>?url=<%= encodeURIComponent(img.url.replace('/upload/', '/upload/fl_attachment/')) %>">
                                                                     <i class="fas fa-file-image me-2 text-muted"></i> Page <%= index + 1 %>
                                                                 </a>
                                                             </li>

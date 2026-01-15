@@ -18,6 +18,7 @@ function escapeRegex(text) {
 router.get('/', async (req, res) => {
     try {
         const subjects = await Subject.find({}).sort({ semester: 1, name: 1 });
+        
         // Announcements fetched via middleware
         
         let progressMap = {};
@@ -57,6 +58,47 @@ router.get('/', async (req, res) => {
     } catch (err) {
         console.error(err);
         res.status(500).send('Server Error');
+    }
+});
+
+// Leaderboard Page
+router.get('/leaderboard', async (req, res) => {
+    try {
+        // Fetch Leaderboard (Top 10 Students)
+        const leaderboard = await require('../models/User').find({ role: 'student' })
+            .sort({ score: -1 })
+            .limit(10)
+            .select('name username score semester');
+            
+        res.render('leaderboard', { leaderboard });
+    } catch (err) {
+        console.error(err);
+        res.redirect('/');
+    }
+});
+
+const DownloadLog = require('../models/DownloadLog');
+router.get('/paper/download/:id', async (req, res) => {
+    try {
+        const paperId = req.params.id;
+        const targetUrl = req.query.url;
+        const userId = req.session.userId;
+
+        if (userId && paperId) {
+            // Log download silently
+            // Use findOneAndUpdate with upsert to avoid race conditions or duplicate key errors if index exists
+            // But we defined unique index.
+            try {
+                await DownloadLog.create({ user: userId, paper: paperId });
+            } catch (e) {
+                // Ignore duplicate key error (already downloaded)
+            }
+        }
+        
+        res.redirect(targetUrl || '/');
+    } catch (err) {
+        console.error(err);
+        res.redirect('/');
     }
 });
 

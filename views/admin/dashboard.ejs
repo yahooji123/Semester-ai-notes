@@ -76,18 +76,41 @@
         
         <!-- Registration Toggle Card -->
         <div class="col-md-4">
-            <div class="card h-100 border-warning shadow-sm">
-                <div class="card-body text-center d-flex flex-column justify-content-center">
-                    <h5 class="card-title text-muted mb-3">User Registration</h5>
-                    <h3 class="fw-bold <%= currentUser.isRegistrationEnabled ? 'text-success' : 'text-danger' %> mb-3">
-                        <%= currentUser.isRegistrationEnabled ? 'ENABLED' : 'DISABLED' %>
-                    </h3>
-                    <form action="/admin/toggle-registration" method="POST">
-                        <button class="btn w-100 <%= currentUser.isRegistrationEnabled ? 'btn-danger' : 'btn-success' %>">
-                            <%= currentUser.isRegistrationEnabled ? 'Disable New Signups' : 'Enable New Signups' %>
-                        </button>
-                    </form>
+            <div class="d-flex flex-column gap-3 h-100">
+                
+                <!-- Student Login Toggle -->
+                 <div class="card border-0 shadow-sm flex-fill">
+                    <div class="card-body text-center d-flex flex-column justify-content-center">
+                        <h6 class="card-title text-muted text-uppercase fw-bold mb-2" style="font-size: 0.8rem;">Student Login Panel</h6>
+                        <h4 class="fw-bold <%= studentLoginEnabled ? 'text-success' : 'text-danger' %> mb-3">
+                            <%= studentLoginEnabled ? 'ONLINE' : 'OFFLINE' %>
+                        </h4>
+                        <form action="/admin/toggle-student-login" method="POST">
+                            <button class="btn w-100 btn-sm rounded-pill fw-bold <%= studentLoginEnabled ? 'btn-outline-danger' : 'btn-success' %>">
+                                <%= studentLoginEnabled ? 'Turn OFF Login' : 'Turn ON Login' %>
+                            </button>
+                        </form>
+                        <% if (!studentLoginEnabled) { %>
+                             <small class="text-danger mt-2" style="font-size: 0.7rem;">Students will see "Maintenance Mode"</small>
+                        <% } %>
+                    </div>
                 </div>
+
+                <!-- Registration Toggle -->
+                <div class="card border-0 shadow-sm flex-fill">
+                    <div class="card-body text-center d-flex flex-column justify-content-center">
+                        <h6 class="card-title text-muted text-uppercase fw-bold mb-2" style="font-size: 0.8rem;">New Registrations</h6>
+                        <h4 class="fw-bold <%= currentUser.isRegistrationEnabled ? 'text-success' : 'text-danger' %> mb-3">
+                            <%= currentUser.isRegistrationEnabled ? 'OPEN' : 'CLOSED' %>
+                        </h4>
+                        <form action="/admin/toggle-registration" method="POST">
+                            <button class="btn w-100 btn-sm rounded-pill fw-bold <%= currentUser.isRegistrationEnabled ? 'btn-outline-danger' : 'btn-success' %>">
+                                <%= currentUser.isRegistrationEnabled ? 'Close Signups' : 'Open Signups' %>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+
             </div>
         </div>
     </div>

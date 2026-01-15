@@ -1,0 +1,37 @@
+<%- include('partials/header') %>
+    <div class="row justify-content-center mt-5">
+        <div class="col-md-5 col-lg-4">
+            <div class="card shadow-lg border-0 rounded-4 overflow-hidden">
+                <div class="card-header bg-danger text-white text-center py-4">
+                     <i class="fas fa-user-shield fa-3x mb-2"></i>
+                     <h4 class="mb-0 fw-bold">Admin Portal</h4>
+                </div>
+                <div class="card-body p-4 p-md-5">
+                    
+                    <% if (error) { %>
+                        <div class="alert alert-danger shadow-sm border-0 border-start border-4 border-danger rounded-0"><i class="fas fa-exclamation-circle me-2"></i><%= error %></div>
+                    <% } %>
+
+                    <form action="/login" method="POST">
+                        <input type="hidden" name="loginType" value="admin">
+                        
+                        <div class="form-floating mb-3">
+                            <input type="text" name="username" class="form-control" id="floatingInput" placeholder="Username" required>
+                            <label for="floatingInput">Admin Username</label>
+                        </div>
+                        <div class="form-floating mb-4">
+                            <input type="password" name="password" class="form-control" id="floatingPassword" placeholder="Password" required>
+                            <label for="floatingPassword">Password</label>
+                        </div>
+                        
+                        <button type="submit" class="btn btn-danger w-100 py-2 fw-bold rounded-pill shadow-sm transition-btn">Secure Login <i class="fas fa-arrow-right ms-2"></i></button>
+                    </form>
+                    
+                    <div class="text-center mt-4">
+                        <a href="/login" class="text-decoration-none text-muted small"><i class="fas fa-arrow-left me-1"></i> Back to Student Login</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+<%- include('partials/footer') %>
