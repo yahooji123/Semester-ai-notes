@@ -3,6 +3,7 @@ const router = express.Router();
 const Subject = require('../models/Subject');
 const Topic = require('../models/Topic');
 const Paper = require('../models/Paper');
+const CommunityNote = require('../models/CommunityNote');
 const Progress = require('../models/Progress');
 const Goal = require('../models/Goal');
 const Announcement = require('../models/Announcement');
@@ -216,6 +217,11 @@ router.get('/subject/:id/papers', async (req, res) => {
 
         const papers = await Paper.find({ subject: subject._id }).sort({ year: -1 });
 
+        // Fetch Community Notes (Approved only)
+        const communityNotes = await CommunityNote.find({ subject: subject._id, status: 'approved' })
+            .populate('uploadedBy', 'name username')
+            .sort({ createdAt: -1 });
+
         // Fetch chapters for sidebar consistency
         const allTopics = await Topic.find({ subject: subject._id }).sort({ createdAt: 1 });
         const chapters = {};
@@ -227,6 +233,7 @@ router.get('/subject/:id/papers', async (req, res) => {
         res.render('subject-papers', {
             subject,
             papers,
+            communityNotes,
             chapters,
             activeTopic: null // To highlight sidebar correctly if needed, or just leave null
         });

@@ -46,6 +46,11 @@
                         <span class="badge bg-warning text-dark border mb-2">Resources</span>
                         <h1 class="h2 fw-bold mb-0 text-dark">Previous Year Papers</h1>
                     </div>
+                    <% if (typeof user !== 'undefined' && user) { %>
+                        <button class="btn btn-primary shadow-sm" data-bs-toggle="modal" data-bs-target="#uploadNoteModal">
+                            <i class="fas fa-cloud-upload-alt me-2"></i> Upload Notes
+                        </button>
+                    <% } %>
                 </div>
 
                 <% if (papers.length === 0) { %>
@@ -101,6 +106,95 @@
                         </div>
                     <% }) %>
                 </div>
+
+                <!-- COMMUNITY NOTES SECTION -->
+                <div class="mt-5 pt-5 border-top">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <h2 class="h3 fw-bold text-dark"><i class="fas fa-users me-2 text-primary"></i>Community Notes</h2>
+                        <span class="badge bg-light text-muted border">Student Contributions</span>
+                    </div>
+
+                    <% if (typeof communityNotes !== 'undefined' && communityNotes.length > 0) { %>
+                        <div class="row g-4">
+                            <% communityNotes.forEach(note => { %>
+                                <div class="col-md-6 col-lg-4">
+                                    <div class="card h-100 border-0 shadow-sm hover-card">
+                                        <div class="card-body">
+                                            <div class="d-flex align-items-center mb-3">
+                                                <div class="bg-primary bg-opacity-10 text-primary rounded-circle p-3 me-3">
+                                                    <i class="fas <%= note.fileType === 'image' ? 'fa-file-image' : 'fa-file-pdf' %> fa-lg"></i>
+                                                </div>
+                                                <div>
+                                                    <h6 class="fw-bold mb-0 text-truncate" style="max-width: 150px;"><%= note.title %></h6>
+                                                    <small class="text-muted" style="font-size: 0.75rem;">by <%= note.uploadedBy ? note.uploadedBy.username : 'Unknown' %></small>
+                                                </div>
+                                            </div>
+                                            <p class="small text-muted mb-4 card-text" style="min-height: 40px;"><%= note.description || 'No description provided.' %></p>
+                                            
+                                            <a href="<%= note.fileUrl %>" target="_blank" class="btn btn-outline-primary w-100 btn-sm rounded-pill">
+                                                <i class="fas fa-download me-2"></i> Download / View
+                                            </a>
+                                        </div>
+                                        <div class="card-footer bg-light border-top-0 py-2">
+                                            <small class="text-muted"><i class="far fa-clock me-1"></i> <%= new Date(note.createdAt).toLocaleDateString() %></small>
+                                        </div>
+                                    </div>
+                                </div>
+                            <% }) %>
+                        </div>
+                    <% } else { %>
+                        <div class="text-center py-5 bg-light rounded-3 border border-dashed">
+                            <i class="fas fa-cloud-upload-alt fa-3x text-muted mb-3 opacity-50"></i>
+                            <h5 class="text-muted">No community notes yet.</h5>
+                            <p class="text-muted small mb-0">Be the first to upload and earn +50 points!</p>
+                        </div>
+                    <% } %>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- Upload Note Modal -->
+    <div class="modal fade" id="uploadNoteModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title fw-bold"><i class="fas fa-upload me-2"></i>Upload Your Notes</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form action="/contribution/upload" method="POST" enctype="multipart/form-data">
+                    <div class="modal-body p-4">
+                        <input type="hidden" name="subjectId" value="<%= subject._id %>">
+                        
+                        <div class="alert alert-info d-flex align-items-center mb-4">
+                            <i class="fas fa-info-circle fa-2x me-3"></i>
+                            <div>
+                                <small>Generate high-quality PDF notes. Once approved by Admin, you will earn <strong>+50 Points</strong> on the leaderboard!</small>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Title</label>
+                            <input type="text" name="title" class="form-control" placeholder="e.g. Unit 1: Introduction to Java" required>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Description (Optional)</label>
+                            <textarea name="description" class="form-control" rows="2" placeholder="Brief details about the notes..."></textarea>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Select File (PDF preferred)</label>
+                            <input type="file" name="file" class="form-control" accept=".pdf,.jpg,.png,.jpeg" required>
+                            <div class="form-text">Max size 10MB. PDF is recommended.</div>
+                        </div>
+                    </div>
+                    <div class="modal-footer bg-light">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary px-4">Upload Now</button>
+                    </div>
+                </form>
             </div>
         </div>
     </div>

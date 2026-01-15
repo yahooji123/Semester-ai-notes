@@ -28,17 +28,16 @@ userSchema.statics.recalculateScores = async function() {
     const Progress = require('./Progress');
     const DownloadLog = require('./DownloadLog');
     const Comment = require('./Comment');
+    const CommunityNote = require('./CommunityNote');
     
     //console.log('🔄 Starting Leaderboard Recalculation...');
     const users = await this.find({ role: 'student' });
     
     for (const user of users) {
         // 1. Progress Points
-        // Read = 2, Revise = 5 (Additive logic: Unread->Read(+2), Unread->Revise(+5))
-        // We just count current status.
         const readCount = await Progress.countDocuments({ user: user._id, status: 'read' });
         const reviseCount = await Progress.countDocuments({ user: user._id, status: 'revise' });
-        const progressPoints = (readCount * 2) + (reviseCount * 5); // 2 + 3 = 5 total for revised
+        const progressPoints = (readCount * 2) + (reviseCount * 5); 
 
         // 2. Download Points
         const downloadCount = await DownloadLog.countDocuments({ user: user._id });
@@ -46,9 +45,14 @@ userSchema.statics.recalculateScores = async function() {
 
         // 3. Comment Points
         const commentCount = await Comment.countDocuments({ user: user._id });
-        const commentPoints = commentCount * 1; // +1 point 
+        const commentPoints = commentCount * 1; 
 
-        const totalScore = progressPoints + downloadPoints + commentPoints;
+        // 4. Contribution Points
+        const approvedNotesCount = await CommunityNote.countDocuments({ uploadedBy: user._id, status: 'approved' });
+        const contributionPoints = approvedNotesCount * 50;
+
+        const totalScore = progressPoints + downloadPoints + commentPoints + contributionPoints;
+
         
         // Update only if changed
         if (user.score !== totalScore) {

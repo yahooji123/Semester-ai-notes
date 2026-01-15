@@ -67,6 +67,7 @@ app.use(injectUser);
 app.use('/', require('./routes/indexRoutes')); // Public Routes
 app.use('/', require('./routes/authRoutes'));  // Authentication
 app.use('/admin', require('./routes/adminRoutes')); // Admin Panel
+app.use('/contribution', require('./routes/contributionRoutes')); // Contribution Routes
 app.use('/profile', require('./routes/userRoutes')); // User Profile
 
 /**
