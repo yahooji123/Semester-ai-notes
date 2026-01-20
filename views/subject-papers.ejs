@@ -1,45 +1,35 @@
 <%- include('partials/header') %>
-    <div class="row flex-nowrap h-100">
-        <!-- Sidebar (Reused from subject.ejs but simplified logic) -->
+    
+    <% const currentUrl = '/subject/' + subject._id + '/papers'; %>
+
+    <!-- Mobile Toggle Button (Visible only on mobile) -->
+    <div class="d-block d-md-none bg-white border-bottom p-3 sticky-top" style="top: 56px; z-index: 1020;">
+        <button class="btn btn-primary w-100 shadow-sm" type="button" data-bs-toggle="offcanvas" data-bs-target="#sidebarOffcanvas">
+            <i class="fas fa-list me-2"></i> Browse Topics & Papers
+        </button>
+    </div>
+
+    <div class="row flex-nowrap h-100 g-0">
+        <!-- Sidebar (Desktop) -->
         <div class="col-md-3 col-lg-3 d-none d-md-block" data-aos="fade-right">
-            <div class="sidebar p-3 rounded-3 shadow-sm sticky-top" style="top: 90px; height: 85vh;">
-                <a href="/" class="btn btn-light btn-sm w-100 mb-4 text-start fw-bold text-muted">
-                    <i class="fas fa-arrow-left me-2"></i> All Subjects
-                </a>
-                <h5 class="fw-bold mb-4 px-2 border-start border-4 border-primary ps-2"><%= subject.name %></h5>
-                
-                <div class="d-grid gap-2 mb-4">
-                     <a href="/subject/<%= subject._id %>" class="btn btn-outline-primary btn-sm text-start">
-                        <i class="fas fa-book-open me-2"></i> Study Notes
-                     </a>
-                     <a href="/subject/<%= subject._id %>/papers" class="btn btn-primary btn-sm text-start">
-                        <i class="fas fa-file-alt me-2"></i> Question Papers
-                     </a>
-                </div>
+            <div class="sticky-top" style="top: 90px; height: 85vh;">
+                <%- include('partials/subject-sidebar', { currentUrl: currentUrl }) %>
+            </div>
+        </div>
 
-                <hr>
-
-                <% if (typeof chapters !== 'undefined') { %>
-                    <% for (const [chapter, topicList] of Object.entries(chapters)) { %>
-                        <div class="mb-3">
-                            <h6 class="text-uppercase text-muted fw-bold px-2 mb-2" style="font-size: 0.75rem;"><%= chapter %></h6>
-                            <div class="d-flex flex-column gap-1">
-                                <% topicList.forEach(topic => { %>
-                                    <a href="/subject/<%= subject._id %>?topicId=<%= topic._id %>" 
-                                    class="sidebar-link px-3 py-2 text-decoration-none d-flex align-items-center">
-                                        <i class="far fa-circle me-2 small text-muted" style="font-size: 0.6rem;"></i>
-                                        <span class="text-truncate"><%= topic.title %></span>
-                                    </a>
-                                <% }) %>
-                            </div>
-                        </div>
-                    <% } %>
-                <% } %>
+        <!-- Sidebar (Mobile Offcanvas) -->
+        <div class="offcanvas offcanvas-start" tabindex="-1" id="sidebarOffcanvas">
+            <div class="offcanvas-header bg-light">
+                <h5 class="offcanvas-title fw-bold"><i class="fas fa-book me-2"></i>Subject Menu</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+            </div>
+            <div class="offcanvas-body p-0">
+                 <%- include('partials/subject-sidebar', { currentUrl: currentUrl }) %>
             </div>
         </div>
 
         <!-- Main Content -->
-        <div class="col-md-9 col-lg-9 ms-md-auto px-4 pb-5">
+        <div class="col-md-9 col-lg-9 ms-md-auto px-4 pb-5 pt-3">
             <div class="content-wrapper" data-aos="fade-up">
                 <div class="d-flex justify-content-between align-items-center border-bottom pb-3 mb-4">
                     <div>
