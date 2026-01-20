@@ -97,4 +97,43 @@ router.post('/admin/reject/:id', isAdmin, async (req, res) => {
     }
 });
 
+// DELETE: Delete a Note
+router.delete('/admin/delete/:id', isAdmin, async (req, res) => {
+    try {
+        const note = await CommunityNote.findById(req.params.id);
+        if (note) {
+            // Delete from Cloudinary
+            if (note.fileUrl) {
+                // Extract public_id from URL
+                // URL: .../upload/v1234/folder/filename.ext
+                // Needed: folder/filename (without extension)
+                
+                // Regex to find content between 'upload/' (and optional version) and the extension
+                const publicIdMatch = note.fileUrl.match(/\/upload\/(?:v\d+\/)?(.+)\.[^.]+$/);
+                
+                if (publicIdMatch && publicIdMatch[1]) {
+                    const publicId = publicIdMatch[1];
+                    try {
+                        // For raw files (PDFs often are treated as 'image' by Cloudinary SDK if uploaded via image upload preset/method, or 'raw'.
+                        // However, multer-storage-cloudinary usually uploads as 'image' resource type by default unless specified.
+                        // We'll try destroying safely.
+                        await cloudinary.uploader.destroy(publicId);
+                    } catch (e) {
+                        console.error("Cloudinary Delete Error:", e);
+                    }
+                }
+            }
+            
+            await CommunityNote.findByIdAndDelete(req.params.id);
+        }
+        
+        // Redirect back to request page (referer)
+        const referer = req.get('Referer');
+        res.redirect(referer || '/contribution/admin/manage');
+    } catch (err) {
+        console.error(err);
+        res.status(500).send('Server Error');
+    }
+});
+
 module.exports = router;
