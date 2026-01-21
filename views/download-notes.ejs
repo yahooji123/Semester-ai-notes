@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= subject.name %> - Complete Notes</title>
+    <!-- Bootstrap -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        :root {
+            --primary-color: #6366f1;
+        }
+        body {
+            background-color: #e2e8f0;
+            color: #1e293b;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        /* A4 Paper Simulation on Screen */
+        .page-container {
+            max-width: 210mm; /* A4 Width */
+            margin: 30px auto;
+            background: white;
+            padding: 20mm; /* Standard Print Margin */
+            box-shadow: 0 0 15px rgba(0,0,0,0.1);
+            min-height: 297mm; /* A4 Height */
+        }
+
+        /* Control Bar (Top) */
+        .control-bar {
+            position: fixed;
+            top: 0; left: 0; right: 0;
+            background: #1e293b;
+            padding: 15px;
+            color: white;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 9999;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+        }
+
+        /* Chapter & Topic Styling */
+        .chapter-header {
+            color: var(--primary-color);
+            border-bottom: 2px solid var(--primary-color);
+            padding-bottom: 5px;
+            margin-top: 40px;
+            margin-bottom: 20px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 800;
+        }
+        .topic-title {
+            margin-top: 30px;
+            margin-bottom: 15px;
+            font-weight: 700;
+            color: #334155;
+            background: #f8fafc;
+            padding: 10px;
+            border-left: 5px solid var(--primary-color);
+        }
+        .topic-content img {
+            max-width: 100%;
+            height: auto;
+            display: block;
+            margin: 20px auto;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+
+        /* PRINT CONFIGURATION (Magic Happens Here) */
+        @media print {
+            body { 
+                background: white; 
+                margin: 0;
+                padding: 0;
+            }
+            .page-container {
+                width: 100%;
+                max-width: none;
+                margin: 0;
+                padding: 0;
+                box-shadow: none;
+                min-height: auto;
+            }
+            .control-bar, .no-print { 
+                display: none !important; 
+            }
+            .chapter-block { 
+                page-break-before: always; 
+            }
+            .topic-container {
+                page-break-inside: avoid;
+            }
+            a[href]:after {
+                content: none !important; /* Don't show URLs in print */
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Top Control Bar (Hidden in Print) -->
+    <div class="control-bar">
+        <div class="d-flex align-items-center">
+            <a href="javascript:history.back()" class="btn btn-outline-light btn-sm me-3"><i class="fas fa-arrow-left"></i> Back</a>
+            <h5 class="mb-0 fw-normal">Reviewing: <strong><%= subject.name %></strong></h5>
+        </div>
+        <div>
+            <span class="text-white-50 me-3 small d-none d-md-inline">Pro-tip: Select "Save as PDF" in the print dialog.</span>
+            <button onclick="window.print()" class="btn btn-warning fw-bold shadow-sm">
+                <i class="fas fa-file-pdf me-2"></i> Save as PDF / Print
+            </button>
+        </div>
+    </div>
+
+    <!-- Main Content Area (A4 style) -->
+    <div class="page-container" style="margin-top: 100px;">
+        
+        <!-- Cover Page -->
+        <div style="text-align: center; margin-bottom: 50px; padding-top: 100px; padding-bottom: 100px;">
+            <i class="fas fa-graduation-cap fa-5x text-primary mb-3"></i>
+            <h1 class="display-4 fw-bold mb-3"><%= subject.name %></h1>
+            <h3 class="text-muted mb-4">Complete Study Notes Playlist</h3>
+            
+            <div style="margin-top: 50px; border-top: 1px solid #eee; border-bottom: 1px solid #eee; padding: 20px;">
+                <p class="mb-1"><strong>Generated on:</strong> <%= new Date().toLocaleDateString() %></p>
+                <p class="mb-0"><strong>Total Topics:</strong> <%= topics.length %></p>
+            </div>
+            
+            <p class="text-secondary mt-5 small">www.semesternotes.com</p>
+        </div>
+
+        <!-- Table of Contents -->
+        <div style="page-break-before: always;">
+            <h2 class="fw-bold mb-4">Table of Contents</h2>
+            <div class="list-group list-group-flush fs-5">
+                <% for (const [chapter, topicList] of Object.entries(chapters)) { %>
+                    <div class="list-group-item bg-light fw-bold mt-2"><%= chapter %></div>
+                    <% topicList.forEach((topic, index) => { %>
+                        <div class="list-group-item border-0 py-1 ps-4 text-muted" style="font-size: 0.9em;">
+                            <i class="fas fa-angle-right me-2 small"></i> <%= topic.title %>
+                        </div>
+                    <% }) %>
+                <% } %>
+            </div>
+        </div>
+
+        <!-- Content Loop -->
+        <% for (const [chapter, topicList] of Object.entries(chapters)) { %>
+            <div class="chapter-block">
+                <div style="page-break-before: always; padding-top: 30px;"></div>
+                <h2 class="chapter-header"><%= chapter %></h2>
+                
+                <% topicList.forEach(topic => { %>
+                    <div class="topic-container mb-5">
+                        <h3 class="topic-title"><%= topic.title %></h3>
+                        <div class="topic-content">
+                            <%- topic.content %>
+                        </div>
+                    </div>
+                <% }) %>
+            </div>
+        <% } %>
+
+        <div class="text-center text-muted mt-5 pt-5 border-top" style="page-break-before: always;">
+            <p>End of Document</p>
+            <p class="small">Semester Notes App</p>
+        </div>
+
+    </div>
+
+</body>
+</html>

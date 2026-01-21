@@ -359,6 +359,7 @@ router.post('/comment/:id/delete', isAuthenticated, async (req, res) => {
             await Comment.findByIdAndDelete(req.params.id);
         }
 
+
         const subjectId = comment.topic.subject;
         const topicId = comment.topic._id;
         res.redirect(`/subject/${subjectId}?topicId=${topicId}#comments-section`);
@@ -367,6 +368,36 @@ router.post('/comment/:id/delete', isAuthenticated, async (req, res) => {
         console.error(err);
         res.redirect('back');
     }
+});
+
+// Route to render a print-friendly/PDF-generation page for all notes
+router.get('/subject/:id/download-notes', async (req, res) => {
+    try {
+        const subject = await Subject.findById(req.params.id);
+        if (!subject) return res.status(404).send('Subject not found');
+
+        const topics = await Topic.find({ subject: subject._id }).sort({ createdAt: 1 });
+        
+        // Group by chapter for better organization in PDF
+        const chapters = {};
+        topics.forEach(topic => {
+            if (!chapters[topic.chapterName]) chapters[topic.chapterName] = [];
+            chapters[topic.chapterName].push(topic);
+        });
+
+
+        res.render('download-notes', { subject, chapters, topics });
+    } catch (err) {
+        console.error(err);
+        res.status(500).send('Server Error');
+    }
+});
+
+// Attendance Calculator Route
+router.get('/tools/attendance-calculator', async (req, res) => {
+    // Inject user if available for header (handled by middleware usually, but ensuring)
+    // Actually middleware `injectUser` in server.js handles res.locals.user.
+    res.render('attendance-calculator');
 });
 
 module.exports = router;

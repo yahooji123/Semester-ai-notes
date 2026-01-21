@@ -1,0 +1,174 @@
+<%- include('partials/header') %>
+
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            <div class="card border-0 shadow-lg rounded-4 overflow-hidden" data-aos="fade-up">
+                <div class="card-header bg-primary text-white p-4 text-center border-0">
+                    <i class="fas fa-calculator fa-3x mb-3 text-white-50"></i>
+                    <h2 class="fw-bold mb-0">Bunk Calculator</h2>
+                    <p class="text-white-50 mb-0">Attendance Shortage? Let's check!</p>
+                </div>
+                
+                <div class="card-body p-4 p-md-5 bg-white">
+                    <form id="attendanceForm">
+                        <div class="mb-4">
+                            <label class="form-label fw-bold text-muted">Classes Conducted (Total)</label>
+                            <input type="number" id="totalClasses" class="form-control form-control-lg bg-light border-0" placeholder="e.g. 50" required min="1">
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label fw-bold text-muted">Classes Attended</label>
+                            <input type="number" id="attendedClasses" class="form-control form-control-lg bg-light border-0" placeholder="e.g. 35" required min="0">
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label fw-bold text-muted">Target Percentage (%)</label>
+                            <div class="d-flex align-items-center gap-3">
+                                <input type="range" class="form-range flex-grow-1" id="targetRange" min="1" max="100" value="75">
+                                <span class="badge bg-primary fs-6" id="targetDisplay">75%</span>
+                            </div>
+                        </div>
+
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary btn-lg rounded-pill shadow-sm fw-bold">
+                                Calculate <i class="fas fa-arrow-right ms-2"></i>
+                            </button>
+                        </div>
+                    </form>
+
+                    <!-- Result Section -->
+                    <div id="resultSection" class="mt-4 d-none">
+                        <hr class="my-4 text-muted opacity-25">
+                        
+                        <div class="text-center mb-4">
+                            <h5 class="text-muted mb-2">Current Attendance</h5>
+                            <div class="position-relative d-inline-block">
+                                <svg class="progress-ring" width="120" height="120">
+                                    <circle class="progress-ring__circle bg" stroke="#e2e8f0" stroke-width="8" fill="transparent" r="52" cx="60" cy="60"/>
+                                    <circle class="progress-ring__circle fg" stroke="#6366f1" stroke-width="8" fill="transparent" r="52" cx="60" cy="60"/>
+                                </svg>
+                                <div class="position-absolute top-50 start-50 translate-middle">
+                                    <span class="h3 fw-bold" id="currentPercentage">0%</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="alert fade show border-0 rounded-3 shadow-sm" id="resultAlert" role="alert">
+                            <div class="d-flex">
+                                <div class="me-3" id="resultIcon"></div>
+                                <div>
+                                    <h5 class="alert-heading fw-bold" id="resultTitle"></h5>
+                                    <p class="mb-0" id="resultMessage"></p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- Fun Tips -->
+            <div class="text-center mt-4 text-muted small">
+                <p><i class="fas fa-info-circle me-1"></i> <strong>Pro Tip:</strong> 75% is the safe zone. Don't push your luck!</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .progress-ring__circle {
+        transition: stroke-dashoffset 0.5s ease-in-out;
+        transform: rotate(-90deg);
+        transform-origin: 50% 50%;
+    }
+</style>
+
+<script>
+    const form = document.getElementById('attendanceForm');
+    const targetRange = document.getElementById('targetRange');
+    const targetDisplay = document.getElementById('targetDisplay');
+    const resultSection = document.getElementById('resultSection');
+    
+    // Update Slider Value
+    targetRange.addEventListener('input', (e) => {
+        targetDisplay.textContent = e.target.value + '%';
+    });
+
+    form.addEventListener('submit', (e) => {
+        e.preventDefault();
+        
+        const total = parseInt(document.getElementById('totalClasses').value);
+        const attended = parseInt(document.getElementById('attendedClasses').value);
+        const target = parseInt(targetRange.value);
+
+        if (attended > total) {
+            alert('Attended classes cannot be more than Total classes!');
+            return;
+        }
+
+        const currentPct = (attended / total) * 100;
+        
+        // Update Ring
+        const circle = document.querySelector('.progress-ring__circle.fg');
+        const radius = circle.r.baseVal.value;
+        const circumference = radius * 2 * Math.PI;
+        circle.style.strokeDasharray = `${circumference} ${circumference}`;
+        const offset = circumference - (currentPct / 100) * circumference;
+        circle.style.strokeDashoffset = offset;
+        
+        // Color based on safety
+        if (currentPct >= target) {
+            circle.style.stroke = '#10b981'; // Green
+        } else {
+            circle.style.stroke = '#ef4444'; // Red
+        }
+
+        document.getElementById('currentPercentage').innerText = currentPct.toFixed(1) + '%';
+        resultSection.classList.remove('d-none');
+
+        // Logic
+        const alertBox = document.getElementById('resultAlert');
+        const iconDiv = document.getElementById('resultIcon');
+        const title = document.getElementById('resultTitle');
+        const msg = document.getElementById('resultMessage');
+
+        if (currentPct >= target) {
+            // Can Bunk
+            // Formula: B = (A/T) - N
+            const targetRatio = target / 100;
+            const maxTotal = attended / targetRatio; 
+            const bunks = Math.floor(maxTotal - total);
+
+            alertBox.className = 'alert alert-success border-0 rounded-3 shadow-sm';
+            iconDiv.innerHTML = '<i class="fas fa-check-circle fa-2x"></i>';
+            title.innerText = "You are Safe!";
+            if (bunks > 0) {
+                 msg.innerHTML = `You can bunk <strong>${bunks}</strong> more classes and still maintain ${target}%.`;
+            } else {
+                 msg.innerHTML = `You are on the edge! Don't miss next class.`;
+            }
+
+        } else {
+            // Need to Attend
+            // Formula: C = (TN - A) / (1 - T)
+            const targetRatio = target / 100;
+            // A + x / N + x = T
+            // A + x = TN + Tx
+            // x - Tx = TN - A
+            // x(1-T) = TN - A
+            // x = (TN - A) / (1-T)
+
+            const needed = Math.ceil((targetRatio * total - attended) / (1 - targetRatio));
+            
+            alertBox.className = 'alert alert-danger border-0 rounded-3 shadow-sm';
+            iconDiv.innerHTML = '<i class="fas fa-exclamation-triangle fa-2x"></i>';
+            title.innerText = "Attendance Shortage!";
+            msg.innerHTML = `You need to attend next <strong>${needed}</strong> classes continuously to reach ${target}%.`;
+        }
+    });
+
+    // Initial Trigger for slide animation if needed
+</script>
+
+<%- include('partials/footer') %>

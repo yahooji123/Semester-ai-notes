@@ -11,6 +11,10 @@
          <a href="/subject/<%= subject._id %>/papers" class="btn <%= currentUrl.includes('/papers') ? 'btn-primary' : 'btn-outline-primary' %> btn-sm text-start">
             <i class="fas fa-file-alt me-2"></i> Question Papers
          </a>
+         <!-- Download ALL PDF -->
+         <a href="/subject/<%= subject._id %>/download-notes" target="_blank" class="btn btn-warning btn-sm text-start text-dark fw-bold">
+            <i class="fas fa-file-pdf me-2"></i> Download Full PDF
+         </a>
     </div>
 
     <hr>
