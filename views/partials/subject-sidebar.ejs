@@ -11,6 +11,7 @@
             transition: all 0.3s ease;
             box-shadow: 0 4px 15px rgba(0,0,0,0.1);
         }
+
         .pomodoro-card.floating {
             margin: 0; 
             /* other styles handled by global css */
@@ -55,6 +56,17 @@
             background: #f6e05e; /* yellow-400 */
             color: #744210; /* yellow-900 */
         }
+
+        .sidebar {
+    overflow-y: scroll;
+    scrollbar-width: none; /* Firefox */
+}
+
+.sidebar::-webkit-scrollbar {
+    display: none; /* Chrome, Edge, Safari */
+}
+
+
     </style>
 
     <div class="pomodoro-card">
