@@ -41,6 +41,25 @@
                         </div>
                         
                         <div class="d-flex align-items-center gap-2">
+                            <!-- Listen Mode Button -->
+                            <div class="btn-group shadow-sm" role="group">
+                                <button class="btn btn-outline-primary btn-sm" id="listenBtn" onclick="toggleSpeech()">
+                                    <i class="fas fa-headphones me-1"></i> Listen
+                                </button>
+                                <button type="button" class="btn btn-outline-primary btn-sm dropdown-toggle dropdown-toggle-split" data-bs-toggle="dropdown" aria-expanded="false">
+                                    <span class="visually-hidden">Options</span>
+                                </button>
+                                <ul class="dropdown-menu dropdown-menu-end style-dropdown">
+                                    <li><h6 class="dropdown-header">Playback Speed</h6></li>
+                                    <li><button class="dropdown-item" onclick="changeRate(0.75)"><i class="fas fa-walking me-2"></i>0.75x Slower</button></li>
+                                    <li><button class="dropdown-item active" onclick="changeRate(1.0)" id="rateNormal"><i class="fas fa-running me-2"></i>1.0x Normal</button></li>
+                                    <li><button class="dropdown-item" onclick="changeRate(1.25)"><i class="fas fa-tachometer-alt me-2"></i>1.25x Faster</button></li>
+                                    <li><button class="dropdown-item" onclick="changeRate(1.5)"><i class="fas fa-bolt me-2"></i>1.5x Fast</button></li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li><button class="dropdown-item text-danger" onclick="stopSpeech()"><i class="fas fa-stop me-2"></i>Stop</button></li>
+                                </ul>
+                            </div>
+
                             <button class="btn btn-outline-dark btn-sm shadow-sm" onclick="downloadPDF()">
                                 <i class="fas fa-file-pdf me-1"></i> Save PDF
                             </button>
@@ -280,6 +299,118 @@
         });
     </script>
 <%- include('partials/footer') %>
+
+
+<!-- Text-to-Speech (Listen Mode) -->
+<script>
+    let speechSynth = window.speechSynthesis;
+    let speechUtterance = null;
+    let isSpeaking = false;
+    let isPaused = false;
+    let currentRate = 1.0;
+
+    function toggleSpeech() {
+        const btn = document.getElementById('listenBtn');
+        const contentArea = document.querySelector('.content-area');
+        
+        if (!contentArea) return;
+        
+        // Basic cleanup of text: remove excessive whitespace
+        const content = contentArea.innerText.replace(/\s+/g, ' ').trim();
+        
+        if (!content) return alert("No content available to read.");
+
+        if (isSpeaking) {
+            if (isPaused) {
+                // Resume
+                speechSynth.resume();
+                isPaused = false;
+                updateButtonState('pause');
+            } else {
+                // Pause
+                speechSynth.pause();
+                isPaused = true;
+                updateButtonState('resume');
+            }
+        } else {
+            // Start Reading
+            speechSynth.cancel(); // Safety clear
+            
+            speechUtterance = new SpeechSynthesisUtterance(content);
+            speechUtterance.rate = currentRate;
+            speechUtterance.pitch = 1;
+            
+            // Try to select a clear English voice
+            const voices = speechSynth.getVoices();
+            // detailed search for better voices
+            const preferredVoice = voices.find(v => v.name.includes("Google US English")) || 
+                                   voices.find(v => v.name.includes("Microsoft David")) ||
+                                   voices.find(v => v.lang.startsWith("en"));
+            
+            if (preferredVoice) speechUtterance.voice = preferredVoice;
+
+            speechUtterance.onend = () => {
+                isSpeaking = false;
+                isPaused = false;
+                updateButtonState('listen');
+            };
+            
+            speechUtterance.onerror = (e) => {
+                console.error("Speech Error", e);
+                isSpeaking = false;
+                isPaused = false;
+                updateButtonState('listen');
+            };
+
+            speechSynth.speak(speechUtterance);
+            isSpeaking = true;
+            isPaused = false;
+            updateButtonState('pause');
+        }
+    }
+
+    function stopSpeech() {
+        if (speechSynth) {
+            speechSynth.cancel();
+        }
+        isSpeaking = false;
+        isPaused = false;
+        updateButtonState('listen');
+    }
+
+    function changeRate(rate) {
+        currentRate = rate;
+        // If speaking, we need to restart to apply new rate
+        if (isSpeaking) {
+            stopSpeech();
+            // Small delay to ensure clean stop before restart
+            setTimeout(() => {
+                toggleSpeech();
+            }, 100);
+        }
+    }
+
+    function updateButtonState(state) {
+        const btn = document.getElementById('listenBtn');
+        if (!btn) return;
+        
+        if (state === 'listen') {
+            btn.innerHTML = '<i class="fas fa-headphones me-1"></i> Listen';
+            btn.className = 'btn btn-outline-primary btn-sm';
+        } else if (state === 'pause') {
+            btn.innerHTML = '<i class="fas fa-pause me-1"></i> Pause';
+            btn.className = 'btn btn-warning btn-sm text-dark fw-bold';
+        } else if (state === 'resume') {
+            btn.innerHTML = '<i class="fas fa-play me-1"></i> Resume';
+            btn.className = 'btn btn-success btn-sm text-white fw-bold';
+        }
+    }
+
+    // Stop speech when leaving page
+    window.addEventListener('beforeunload', () => {
+        if (speechSynth) speechSynth.cancel();
+    });
+</script>
 
 <!-- HTML2PDF Library -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>

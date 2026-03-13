@@ -1,0 +1,237 @@
+:root {
+    --bg-color: #f8f9fa;
+    --text-color: #212529;
+    --card-bg: #ffffff;
+    --primary-color: #0d6efd;
+    --sidebar-bg: #ffffff;
+    --border-color: #dee2e6;
+    --muted-text: #6c757d;
+    --input-bg: #fff;
+    --input-color: #212529;
+    --navbar-bg: #ffffff;
+    
+    /* Pomodoro Colors */
+    --pomo-bg: #ffffff;
+    --pomo-text: #333;
+    --pomo-accent: #ff6b6b;
+}
+
+body {
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    transition: background-color 0.3s, color 0.3s;
+}
+
+body.dark-mode {
+    --bg-color: #121212;
+    --text-color: #e0e0e0;
+    --card-bg: #1e1e1e;
+    --primary-color: #3b82f6;
+    --sidebar-bg: #1e1e1e;
+    --border-color: #333;
+    --muted-text: #a0a0a0;
+    --input-bg: #2d2d2d;
+    --input-color: #e0e0e0;
+    --navbar-bg: #1e1e1e;
+    
+    /* Pomodoro Dark Mode */
+    --pomo-bg: #2d2d2d;
+    --pomo-text: #e0e0e0;
+    --pomo-accent: #ff8787;
+}
+
+/* Base Styles using variables */
+.card, .list-group-item, .bg-white {
+    background-color: var(--card-bg) !important;
+    color: var(--text-color);
+    border-color: var(--border-color) !important;
+}
+
+.text-dark {
+    color: var(--text-color) !important;
+}
+
+.text-muted {
+    color: var(--muted-text) !important;
+}
+
+.bg-light {
+    background-color: var(--bg-color) !important;
+}
+
+.border, .border-top, .border-bottom {
+    border-color: var(--border-color) !important;
+}
+
+.sidebar {
+    background-color: var(--sidebar-bg);
+    border: 1px solid var(--border-color);
+}
+
+.navbar {
+    background-color: var(--navbar-bg);
+    border-bottom: 1px solid var(--border-color);
+}
+
+.form-control {
+    background-color: var(--input-bg);
+    color: var(--input-color);
+    border-color: var(--border-color);
+}
+
+.form-control:focus {
+    background-color: var(--input-bg);
+    color: var(--input-color);
+    border-color: var(--primary-color);
+}
+
+/* Buttons in Dark Mode */
+.dark-mode .btn-light {
+    background-color: #333;
+    border-color: #444;
+    color: #e0e0e0;
+}
+
+.dark-mode .btn-outline-dark {
+    color: #e0e0e0;
+    border-color: #e0e0e0;
+}
+
+.dark-mode .btn-outline-dark:hover {
+    background-color: #e0e0e0;
+    color: #121212;
+}
+
+/* User Note Highlights in Dark Mode */
+.dark-mode .user-note-highlight {
+    background-color: #bfa100; /* Darker yellow */
+    color: #000;
+}
+
+/* Sidebar Active Link */
+.sidebar-link.active {
+    background-color: rgba(13, 110, 253, 0.1);
+    color: var(--primary-color);
+    font-weight: 600;
+    border-radius: 5px;
+}
+.dark-mode .sidebar-link.active {
+    background-color: rgba(59, 130, 246, 0.2);
+}
+
+.sidebar-link:hover {
+    background-color: rgba(0,0,0,0.05);
+    border-radius: 5px;
+}
+.dark-mode .sidebar-link:hover {
+    background-color: rgba(255,255,255,0.05);
+}
+
+/* Pomodoro Specific Styles */
+.pomodoro-card {
+    background-color: var(--pomo-bg);
+    border: 1px solid var(--border-color);
+    color: var(--pomo-text);
+    border-radius: 10px;
+    padding: 15px;
+    text-align: center;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    margin-bottom: 20px;
+}
+
+.timer-display {
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: var(--primary-color);
+    font-family: 'Courier New', monospace;
+    margin: 10px 0;
+}
+.timer-mode {
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--muted-text);
+    font-weight: 600;
+}
+.pomo-btn-group .btn {
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+    margin: 0 5px;
+}
+
+/* Full Focus Mode Styles */
+body.full-focus-mode nav,
+body.full-focus-mode footer {
+    display: none !important;
+}
+
+body.full-focus-mode .col-md-3.d-none.d-md-block {
+    display: none !important;
+}
+
+body.full-focus-mode .col-md-9 {
+    width: 100% !important;
+    max-width: 900px !important;
+    margin: 0 auto !important;
+    flex: 0 0 100% !important;
+    padding-top: 2rem !important;
+}
+
+/* Hide mobile toggle button in focus mode */
+body.full-focus-mode .sticky-top.d-md-none {
+    display: none !important;
+}
+
+/* Floating Timer in Focus Mode */
+.pomodoro-card.floating {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    width: 250px;
+    z-index: 10000;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+    animation: slideInRight 0.3s ease-out;
+    margin-bottom: 0;
+}
+
+@keyframes slideInRight {
+    from { transform: translateX(100%); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+}
+
+/* Full Focus Mode */
+body.full-focus-mode .navbar,
+body.full-focus-mode .sidebar,
+body.full-focus-mode footer,
+body.full-focus-mode .col-md-3 {
+    display: none !important;
+}
+
+body.full-focus-mode .col-md-9 {
+    width: 100% !important;
+    max-width: 900px;
+    margin: 0 auto;
+    flex: 0 0 100%;
+}
+
+/* Floating Timer */
+.pomodoro-card.floating {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 9999;
+    width: 280px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+    animation: slideInType 0.3s ease-out;
+}
+
+@keyframes slideInType {
+    from { transform: translateY(-20px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}
