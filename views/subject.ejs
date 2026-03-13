@@ -301,57 +301,152 @@
 <%- include('partials/footer') %>
 
 
-<!-- Text-to-Speech (Listen Mode) -->
+<!-- Text-to-Speech (Listen Mode) - Enhanced -->
 <script>
     let speechSynth = window.speechSynthesis;
     let speechUtterance = null;
     let isSpeaking = false;
     let isPaused = false;
     let currentRate = 1.0;
+    
+    // For Word Highlighting and Start-from-here
+    let textNodesList = [];
+    let cumulativeLengths = [];
+    let highlightMode = false;
 
-    function toggleSpeech() {
+    // Helper: Traverse DOM to collect text nodes
+    function getAllTextNodes(element) {
+        let textNodes = [];
+        let treeWalker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT, null, false);
+        let currentNode;
+        while (currentNode = treeWalker.nextNode()) {
+            if (currentNode.nodeValue.trim().length > 0) {
+                 textNodes.push(currentNode);
+            }
+        }
+        return textNodes;
+    }
+
+    // Helper: Calculate cumulative lengths for mapping
+    function mapTextNodes(container) {
+        textNodesList = getAllTextNodes(container);
+        cumulativeLengths = [];
+        let total = 0;
+        textNodesList.forEach(node => {
+            cumulativeLengths.push(total);
+            total += node.nodeValue.length + 1; // +1 for space usually added in speech
+        });
+        return textNodesList; // Return for reference
+    }
+    
+    // Helper: Highlight range based on charIndex
+    function highlightRange(charIndex, charLength) {
+        if (!highlightMode) return;
+        
+        let foundStart = false;
+        let startNode, startOffset, endNode, endOffset;
+        
+        // Find Start
+        for (let i = 0; i < cumulativeLengths.length; i++) {
+             const nodeStart = cumulativeLengths[i];
+             const nodeEnd = nodeStart + textNodesList[i].nodeValue.length;
+             
+             if (charIndex >= nodeStart && charIndex < nodeEnd) {
+                 startNode = textNodesList[i];
+                 startOffset = charIndex - nodeStart;
+                 foundStart = true;
+                 break;
+             }
+        }
+        
+        if (foundStart) {
+             const selection = window.getSelection();
+             const range = document.createRange();
+             try {
+                // Determine end within the same node (simplified)
+                // Ideally, words might span nodes, but for speech it's rare in clean text
+                let endPos = startOffset + charLength;
+                if (endPos > startNode.nodeValue.length) endPos = startNode.nodeValue.length;
+                
+                range.setStart(startNode, startOffset);
+                range.setEnd(startNode, endPos);
+                
+                selection.removeAllRanges();
+                selection.addRange(range);
+                
+                // Scroll into view if needed
+                if (charIndex % 50 === 0 || charIndex < 100) { // Throttle scrolling
+                     const rect = range.getBoundingClientRect();
+                     if (rect.bottom > window.innerHeight || rect.top < 0) {
+                         startNode.parentElement.scrollIntoView({ behavior: "smooth", block: "center" });
+                     }
+                }
+             } catch (e) { console.log('Range error', e); }
+        }
+    }
+
+    function toggleSpeech(startFromSelection = false) {
         const btn = document.getElementById('listenBtn');
         const contentArea = document.querySelector('.content-area');
         
         if (!contentArea) return;
         
-        // Basic cleanup of text: remove excessive whitespace
-        const content = contentArea.innerText.replace(/\s+/g, ' ').trim();
+        // Prepare contents
+        mapTextNodes(contentArea);
         
-        if (!content) return alert("No content available to read.");
+        // Determine text to read
+        let contentToRead = "";
+        let selection = window.getSelection();
+        let startIndex = 0;
+        
+        if (startFromSelection && selection.toString().trim().length > 0) {
+             contentToRead = selection.toString();
+             // Highlighting selection-based speech is tricky due to offset mapping
+             // So we might disable precise highlighting for selection-only mode
+             highlightMode = false;
+        } else {
+             contentToRead = textNodesList.map(n => n.nodeValue).join(' ');
+             highlightMode = true; 
+        }
+        
+        if (!contentToRead) return alert("No content available to read.");
 
-        if (isSpeaking) {
+        if (isSpeaking && !startFromSelection) {
             if (isPaused) {
-                // Resume
                 speechSynth.resume();
                 isPaused = false;
                 updateButtonState('pause');
             } else {
-                // Pause
                 speechSynth.pause();
                 isPaused = true;
                 updateButtonState('resume');
             }
         } else {
-            // Start Reading
-            speechSynth.cancel(); // Safety clear
+            // Start Fresh
+            stopSpeech(); 
             
-            speechUtterance = new SpeechSynthesisUtterance(content);
+            speechUtterance = new SpeechSynthesisUtterance(contentToRead);
             speechUtterance.rate = currentRate;
             speechUtterance.pitch = 1;
             
-            // Try to select a clear English voice
+            // Voice Selection
             const voices = speechSynth.getVoices();
-            // detailed search for better voices
             const preferredVoice = voices.find(v => v.name.includes("Google US English")) || 
                                    voices.find(v => v.name.includes("Microsoft David")) ||
                                    voices.find(v => v.lang.startsWith("en"));
-            
             if (preferredVoice) speechUtterance.voice = preferredVoice;
 
+            // Events
+            speechUtterance.onboundary = (event) => {
+                 if (event.name === 'word' && highlightMode) {
+                     highlightRange(event.charIndex, event.charLength);
+                 }
+            };
+            
             speechUtterance.onend = () => {
                 isSpeaking = false;
                 isPaused = false;
+                window.getSelection().removeAllRanges(); // Clear highlight
                 updateButtonState('listen');
             };
             
@@ -359,6 +454,7 @@
                 console.error("Speech Error", e);
                 isSpeaking = false;
                 isPaused = false;
+                // Don't clear selection on error to let user retry
                 updateButtonState('listen');
             };
 
@@ -375,20 +471,55 @@
         }
         isSpeaking = false;
         isPaused = false;
+        window.getSelection().removeAllRanges();
         updateButtonState('listen');
     }
 
     function changeRate(rate) {
         currentRate = rate;
-        // If speaking, we need to restart to apply new rate
-        if (isSpeaking) {
+         // Identify which button is active
+         document.querySelectorAll('.style-dropdown .dropdown-item').forEach(el => el.classList.remove('active'));
+         // Simple check to add active class (visual only)
+         if (isSpeaking) {
             stopSpeech();
-            // Small delay to ensure clean stop before restart
-            setTimeout(() => {
-                toggleSpeech();
-            }, 100);
-        }
+            setTimeout(() => toggleSpeech(), 100);
+         }
     }
+    
+    // "Click to Speak" Feature
+    // If enabled, clicking a paragraph will start reading from that paragraph
+    document.addEventListener('DOMContentLoaded', () => {
+        const contentArea = document.querySelector('.content-area');
+        if (contentArea) {
+             contentArea.addEventListener('dblclick', (e) => {
+                 // Check if it's a block element with text
+                 let target = e.target;
+                 // Bubble up to paragraph or list item
+                 while (target && target !== contentArea && !['P','LI','H1','H2','H3','H4','H5','H6'].includes(target.tagName)) {
+                     target = target.parentElement;
+                 }
+                 
+                 if (target && target !== contentArea) {
+                      // Read just this block? or Read from here?
+                      // "Read from here" is complex to calc offset.
+                      // Let's Read JUST this block for simplicity and accuracy
+                      const text = target.innerText;
+                      if (text) {
+                           stopSpeech();
+                           // Highlight the block
+                           const range = document.createRange();
+                           range.selectNodeContents(target);
+                           const sel = window.getSelection();
+                           sel.removeAllRanges();
+                           sel.addRange(range);
+                           
+                           // Speak selection
+                           toggleSpeech(true);
+                      }
+                 }
+             });
+        }
+    });
 
     function updateButtonState(state) {
         const btn = document.getElementById('listenBtn');

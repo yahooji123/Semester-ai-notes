@@ -1,6 +1,15 @@
-<div class="sidebar p-3 rounded-3 shadow-sm h-100 bg-white" style="overflow-y: auto;">
-    
+<div class="sidebar p-3 rounded-3 shadow-sm h-100 bg-white hide-scrollbar" style="overflow-y: auto;">
+
     <style>
+        /* Hide scrollbar */
+        .hide-scrollbar {
+            -ms-overflow-style: none;  /* IE and Edge */
+            scrollbar-width: none;  /* Firefox */
+        }
+        .hide-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+
         .pomodoro-card {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
@@ -9,13 +18,14 @@
             position: relative;
             overflow: hidden;
             transition: all 0.3s ease;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
         }
 
         .pomodoro-card.floating {
-            margin: 0; 
+            margin: 0;
             /* other styles handled by global css */
         }
+
         .pomo-label {
             font-size: 0.75rem;
             letter-spacing: 2px;
@@ -23,14 +33,16 @@
             opacity: 0.9;
             text-transform: uppercase;
         }
+
         .pomo-display {
             font-size: 3rem;
             font-weight: 800;
             font-family: 'Courier New', monospace;
-            text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
             margin: 10px 0;
             line-height: 1;
         }
+
         .pomo-controls button {
             width: 40px;
             height: 40px;
@@ -41,49 +53,47 @@
             justify-content: center;
             transition: all 0.2s;
             cursor: pointer;
-            background: rgba(255,255,255,0.2);
+            background: rgba(255, 255, 255, 0.2);
             color: white;
         }
+
         .pomo-controls button:hover {
             transform: scale(1.1);
-            background: rgba(255,255,255,0.3);
+            background: rgba(255, 255, 255, 0.3);
         }
+
         .pomo-controls button.pomo-play {
             background: white;
             color: #667eea;
         }
+
         .pomo-controls button.pomo-pause {
-            background: #f6e05e; /* yellow-400 */
-            color: #744210; /* yellow-900 */
+            background: #f6e05e;
+            /* yellow-400 */
+            color: #744210;
+            /* yellow-900 */
         }
 
-        .sidebar {
-    overflow-y: scroll;
-    scrollbar-width: none; /* Firefox */
-}
-
-.sidebar::-webkit-scrollbar {
-    display: none; /* Chrome, Edge, Safari */
-}
-
-
+      
     </style>
 
     <div class="pomodoro-card">
         <!-- Decoration -->
-        <div style="position: absolute; top: -20px; right: -20px; width: 80px; height: 80px; background: rgba(255,255,255,0.1); border-radius: 50%;"></div>
-        
+        <div
+            style="position: absolute; top: -20px; right: -20px; width: 80px; height: 80px; background: rgba(255,255,255,0.1); border-radius: 50%;">
+        </div>
+
         <div class="d-flex justify-content-between align-items-center mb-2 position-relative" style="z-index: 2;">
             <div class="pomo-label">FOCUS TIME</div>
             <button class="btn btn-sm text-white p-0 pomo-edit opacity-75 hover-opacity-100" title="Edit Duration">
                 <i class="fas fa-pen fa-xs"></i>
             </button>
         </div>
-        
+
         <div class="text-center position-relative" style="z-index: 2;">
             <div class="pomo-display">25:00</div>
         </div>
-        
+
         <div class="pomo-controls d-flex justify-content-center gap-2 mt-3 position-relative" style="z-index: 2;">
             <button class="pomo-play shadow-sm" title="Start">
                 <i class="fas fa-play"></i>
@@ -104,231 +114,243 @@
     </div>
 
     <script>
-    (function() {
-        // Find container: script is after div, so previous sibling.
-        // Or finding strictly by class if unique. Since this is a partial, let's use a robust finder.
-        const scripts = document.getElementsByTagName('script');
-        const currentScript = scripts[scripts.length - 1];
-        const container = currentScript.previousElementSibling; 
+        (function () {
+            // Find container: script is after div, so previous sibling.
+            // Or finding strictly by class if unique. Since this is a partial, let's use a robust finder.
+            const scripts = document.getElementsByTagName('script');
+            const currentScript = scripts[scripts.length - 1];
+            const container = currentScript.previousElementSibling;
 
-        // Elements
-        const display = container.querySelector('.pomo-display');
-        const label = container.querySelector('.pomo-label');
-        const playBtn = container.querySelector('.pomo-play');
-        const pauseBtn = container.querySelector('.pomo-pause');
-        const resetBtn = container.querySelector('.pomo-reset');
-        const switchBtn = container.querySelector('.pomo-switch');
-        const editBtn = container.querySelector('.pomo-edit');
-        const focusModeBtn = container.querySelector('.pomo-focus-mode');
+            // Elements
+            const display = container.querySelector('.pomo-display');
+            const label = container.querySelector('.pomo-label');
+            const playBtn = container.querySelector('.pomo-play');
+            const pauseBtn = container.querySelector('.pomo-pause');
+            const resetBtn = container.querySelector('.pomo-reset');
+            const switchBtn = container.querySelector('.pomo-switch');
+            const editBtn = container.querySelector('.pomo-edit');
+            const focusModeBtn = container.querySelector('.pomo-focus-mode');
 
-        // State
-        let timerInterval;
-        let focusDuration = 25;
-        let breakDuration = 5;
-        let timeLeft = focusDuration * 60;
-        let isRunning = false;
-        let isBreak = false;
-        
-        // Setup initial Background
-        // container.style.background = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
+            // State
+            let timerInterval;
+            let focusDuration = 25;
+            let breakDuration = 5;
+            let timeLeft = focusDuration * 60;
+            let isRunning = false;
+            let isBreak = false;
 
-        function playBeep() {
-            try {
-                const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-                const oscillator = audioCtx.createOscillator();
-                const gainNode = audioCtx.createGain();
-                oscillator.connect(gainNode);
-                gainNode.connect(audioCtx.destination);
-                oscillator.type = 'sine';
-                oscillator.frequency.setValueAtTime(440, audioCtx.currentTime);
-                gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime);
-                oscillator.start();
-                oscillator.stop(audioCtx.currentTime + 1);
-            } catch(e){}
-        }
+            // Setup initial Background
+            // container.style.background = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
 
-        function updateDisplay() {
-            const minutes = Math.floor(timeLeft / 60);
-            const seconds = timeLeft % 60;
-            display.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-            if (isRunning) document.title = `${display.textContent} - ${isBreak ? 'Break' : 'Focus'}`;
-        }
-
-        function startTimer() {
-            if (isRunning) return;
-            // Prevent starting if timeLeft is 0 (finished)
-            if (timeLeft <= 0) {
-                 timeLeft = isBreak ? breakDuration * 60 : focusDuration * 60;
+            function playBeep() {
+                try {
+                    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                    const oscillator = audioCtx.createOscillator();
+                    const gainNode = audioCtx.createGain();
+                    oscillator.connect(gainNode);
+                    gainNode.connect(audioCtx.destination);
+                    oscillator.type = 'sine';
+                    oscillator.frequency.setValueAtTime(440, audioCtx.currentTime);
+                    gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime);
+                    oscillator.start();
+                    oscillator.stop(audioCtx.currentTime + 1);
+                } catch (e) { }
             }
-            
-            isRunning = true;
-            playBtn.style.display = 'none';
-            pauseBtn.style.display = 'inline-flex';
-            editBtn.style.visibility = 'hidden';
 
-            timerInterval = setInterval(() => {
-                if (timeLeft > 0) {
-                    timeLeft--;
-                    updateDisplay();
+            function updateDisplay() {
+                const minutes = Math.floor(timeLeft / 60);
+                const seconds = timeLeft % 60;
+                display.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+                if (isRunning) document.title = `${display.textContent} - ${isBreak ? 'Break' : 'Focus'}`;
+            }
+
+            function startTimer() {
+                if (isRunning) return;
+                // Prevent starting if timeLeft is 0 (finished)
+                if (timeLeft <= 0) {
+                    timeLeft = isBreak ? breakDuration * 60 : focusDuration * 60;
+                }
+
+                isRunning = true;
+                playBtn.style.display = 'none';
+                pauseBtn.style.display = 'inline-flex';
+                editBtn.style.visibility = 'hidden';
+
+                timerInterval = setInterval(() => {
+                    if (timeLeft > 0) {
+                        timeLeft--;
+                        updateDisplay();
+                    } else {
+                        clearInterval(timerInterval);
+                        isRunning = false;
+                        playBeep();
+                        playBtn.style.display = 'inline-flex';
+                        pauseBtn.style.display = 'none';
+                        editBtn.style.visibility = 'visible';
+
+                        if (Notification.permission === "granted") new Notification("Time's up!");
+                        alert("Time's up!");
+
+                        // Auto reset for next run
+                        timeLeft = isBreak ? breakDuration * 60 : focusDuration * 60;
+                        updateDisplay();
+                    }
+                }, 1000);
+            }
+
+            function pauseTimer() {
+                clearInterval(timerInterval);
+                isRunning = false;
+                playBtn.style.display = 'inline-flex';
+                pauseBtn.style.display = 'none';
+                editBtn.style.visibility = 'visible';
+                updateDisplay();
+            }
+
+            function resetTimer() {
+                pauseTimer();
+                timeLeft = isBreak ? breakDuration * 60 : focusDuration * 60;
+                updateDisplay();
+            }
+
+            function switchMode() {
+                pauseTimer();
+                isBreak = !isBreak;
+                if (isBreak) {
+                    timeLeft = breakDuration * 60;
+                    label.textContent = "BREAK TIME";
+                    switchBtn.innerHTML = '<i class="fas fa-brain"></i>';
+                    switchBtn.title = "Switch to Focus";
+                    container.style.background = 'linear-gradient(135deg, #43cea2 0%, #185a9d 100%)';
                 } else {
-                    clearInterval(timerInterval);
-                    isRunning = false;
-                    playBeep();
-                    playBtn.style.display = 'inline-flex';
-                    pauseBtn.style.display = 'none';
-                    editBtn.style.visibility = 'visible';
-                    
-                    if (Notification.permission === "granted") new Notification("Time's up!");
-                    alert("Time's up!");
-                    
-                    // Auto reset for next run
-                   timeLeft = isBreak ? breakDuration * 60 : focusDuration * 60;
-                   updateDisplay();
+                    timeLeft = focusDuration * 60;
+                    label.textContent = "FOCUS TIME";
+                    switchBtn.innerHTML = '<i class="fas fa-coffee"></i>';
+                    switchBtn.title = "Switch to Break";
+                    container.style.background = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
                 }
-            }, 1000);
-        }
-
-        function pauseTimer() {
-            clearInterval(timerInterval);
-            isRunning = false;
-            playBtn.style.display = 'inline-flex';
-            pauseBtn.style.display = 'none';
-            editBtn.style.visibility = 'visible';
-            updateDisplay();
-        }
-
-        function resetTimer() {
-            pauseTimer();
-            timeLeft = isBreak ? breakDuration * 60 : focusDuration * 60;
-            updateDisplay();
-        }
-
-        function switchMode() {
-            pauseTimer();
-            isBreak = !isBreak;
-            if (isBreak) {
-                timeLeft = breakDuration * 60;
-                label.textContent = "BREAK TIME";
-                switchBtn.innerHTML = '<i class="fas fa-brain"></i>';
-                switchBtn.title = "Switch to Focus";
-                container.style.background = 'linear-gradient(135deg, #43cea2 0%, #185a9d 100%)';
-            } else {
-                timeLeft = focusDuration * 60;
-                label.textContent = "FOCUS TIME";
-                switchBtn.innerHTML = '<i class="fas fa-coffee"></i>';
-                switchBtn.title = "Switch to Break";
-                container.style.background = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
+                updateDisplay();
             }
-            updateDisplay();
-        }
 
-        function editTime() {
-            if (isRunning) return;
-            const currentVal = isBreak ? breakDuration : focusDuration;
-            const userInput = prompt(`Set ${isBreak ? 'Break' : 'Focus'} duration (minutes):`, currentVal);
-            
-            if (userInput !== null) {
-                const val = parseInt(userInput);
-                if (!isNaN(val) && val > 0) {
-                    if (isBreak) breakDuration = val;
-                    else focusDuration = val;
-                    
-                    // Update timeLeft immediately
-                    timeLeft = val * 60;
-                    updateDisplay();
+            function editTime() {
+                if (isRunning) return;
+                const currentVal = isBreak ? breakDuration : focusDuration;
+                const userInput = prompt(`Set ${isBreak ? 'Break' : 'Focus'} duration (minutes):`, currentVal);
+
+                if (userInput !== null) {
+                    const val = parseInt(userInput);
+                    if (!isNaN(val) && val > 0) {
+                        if (isBreak) breakDuration = val;
+                        else focusDuration = val;
+
+                        // Update timeLeft immediately
+                        timeLeft = val * 60;
+                        updateDisplay();
+                    }
                 }
             }
-        }
-        
-        // Focus Mode Logic
-        const originalParent = container.parentNode;
-        const originalNextSibling = container.nextSibling;
 
-        function toggleFocusMode() {
-            const isFocus = document.body.classList.toggle('full-focus-mode');
-            const icon = focusModeBtn.querySelector('i');
-            
-            if (isFocus) {
-                container.classList.add('floating');
-                document.body.appendChild(container);
-                icon.className = 'fas fa-compress-arrows-alt';
-                focusModeBtn.title = "Exit Full Focus";
-            } else {
-                container.classList.remove('floating');
-                if (originalNextSibling) {
-                    originalParent.insertBefore(container, originalNextSibling);
+            // Focus Mode Logic
+            const originalParent = container.parentNode;
+            const originalNextSibling = container.nextSibling;
+
+            function toggleFocusMode() {
+                const isFocus = document.body.classList.toggle('full-focus-mode');
+                const icon = focusModeBtn.querySelector('i');
+
+                if (isFocus) {
+                    container.classList.add('floating');
+                    document.body.appendChild(container);
+                    icon.className = 'fas fa-compress-arrows-alt';
+                    focusModeBtn.title = "Exit Full Focus";
                 } else {
-                    originalParent.appendChild(container);
+                    container.classList.remove('floating');
+                    if (originalNextSibling) {
+                        originalParent.insertBefore(container, originalNextSibling);
+                    } else {
+                        originalParent.appendChild(container);
+                    }
+                    icon.className = 'fas fa-expand-arrows-alt';
+                    focusModeBtn.title = "Enter Full Focus Mode";
                 }
-                icon.className = 'fas fa-expand-arrows-alt';
-                focusModeBtn.title = "Enter Full Focus Mode";
             }
-        }
 
-        document.addEventListener('keydown', (e) => {
-            if (e.key === "Escape" && document.body.classList.contains('full-focus-mode')) {
-                // Ensure we only toggle if THIS container is the one floating
-                if (container.classList.contains('floating')) toggleFocusMode();
-            }
-        });
+            document.addEventListener('keydown', (e) => {
+                if (e.key === "Escape" && document.body.classList.contains('full-focus-mode')) {
+                    // Ensure we only toggle if THIS container is the one floating
+                    if (container.classList.contains('floating')) toggleFocusMode();
+                }
+            });
 
-        playBtn.addEventListener('click', startTimer);
-        pauseBtn.addEventListener('click', pauseTimer);
-        resetBtn.addEventListener('click', resetTimer);
-        switchBtn.addEventListener('click', switchMode);
-        editBtn.addEventListener('click', editTime);
-        focusModeBtn.addEventListener('click', toggleFocusMode);
+            playBtn.addEventListener('click', startTimer);
+            pauseBtn.addEventListener('click', pauseTimer);
+            resetBtn.addEventListener('click', resetTimer);
+            switchBtn.addEventListener('click', switchMode);
+            editBtn.addEventListener('click', editTime);
+            focusModeBtn.addEventListener('click', toggleFocusMode);
 
-        // Initial setup
-        updateDisplay();
-        if (Notification.permission !== "granted" && Notification.permission !== "denied") Notification.requestPermission();
-    })();
+            // Initial setup
+            updateDisplay();
+            if (Notification.permission !== "granted" && Notification.permission !== "denied") Notification.requestPermission();
+        })();
     </script>
 
     <a href="/" class="btn btn-light btn-sm w-100 mb-4 text-start fw-bold text-muted">
         <i class="fas fa-arrow-left me-2"></i> All Subjects
     </a>
-    <h5 class="fw-bold mb-4 px-2 border-start border-4 border-primary ps-2"><%= subject.name %></h5>
-    
+    <h5 class="fw-bold mb-4 px-2 border-start border-4 border-primary ps-2">
+        <%= subject.name %>
+    </h5>
+
     <div class="d-grid gap-2 mb-4">
-         <a href="/subject/<%= subject._id %>" class="btn <%= !currentUrl.includes('/papers') ? 'btn-primary' : 'btn-outline-primary' %> btn-sm text-start">
+        <a href="/subject/<%= subject._id %>"
+            class="btn <%= !currentUrl.includes('/papers') ? 'btn-primary' : 'btn-outline-primary' %> btn-sm text-start">
             <i class="fas fa-book-open me-2"></i> Study Notes
-         </a>
-         <a href="/subject/<%= subject._id %>/papers" class="btn <%= currentUrl.includes('/papers') ? 'btn-primary' : 'btn-outline-primary' %> btn-sm text-start">
+        </a>
+        <a href="/subject/<%= subject._id %>/papers"
+            class="btn <%= currentUrl.includes('/papers') ? 'btn-primary' : 'btn-outline-primary' %> btn-sm text-start">
             <i class="fas fa-file-alt me-2"></i> Question Papers
-         </a>
-         <!-- Download ALL PDF -->
-         <a href="/subject/<%= subject._id %>/download-notes" target="_blank" class="btn btn-warning btn-sm text-start text-dark fw-bold">
+        </a>
+        <!-- Download ALL PDF -->
+        <a href="/subject/<%= subject._id %>/download-notes" target="_blank"
+            class="btn btn-warning btn-sm text-start text-dark fw-bold">
             <i class="fas fa-file-pdf me-2"></i> Download Full PDF
-         </a>
+        </a>
     </div>
 
     <hr>
 
-    <% if (typeof chapters !== 'undefined') { %>
+    <% if (typeof chapters !=='undefined' ) { %>
         <% for (const [chapter, topicList] of Object.entries(chapters)) { %>
             <div class="mb-3">
-                <h6 class="text-uppercase text-muted fw-bold px-2 mb-2" style="font-size: 0.75rem;"><%= chapter %></h6>
+                <h6 class="text-uppercase text-muted fw-bold px-2 mb-2" style="font-size: 0.75rem;">
+                    <%= chapter %>
+                </h6>
                 <div class="d-flex flex-column gap-1">
-                    <% topicList.forEach(topic => { %>
-                        <a href="/subject/<%= subject._id %>?topicId=<%= topic._id %>" 
-                        class="sidebar-link px-3 py-2 text-decoration-none d-flex align-items-center <%= (typeof activeTopic !== 'undefined' && activeTopic && activeTopic._id.toString() === topic._id.toString()) ? 'active' : '' %>">
-                            <% if (typeof activeTopic !== 'undefined' && activeTopic && activeTopic._id.toString() === topic._id.toString()) { %>
+                    <% topicList.forEach(topic=> { %>
+                        <a href="/subject/<%= subject._id %>?topicId=<%= topic._id %>"
+                            class="sidebar-link px-3 py-2 text-decoration-none d-flex align-items-center <%= (typeof activeTopic !== 'undefined' && activeTopic && activeTopic._id.toString() === topic._id.toString()) ? 'active' : '' %>">
+                            <% if (typeof activeTopic !=='undefined' && activeTopic &&
+                                activeTopic._id.toString()===topic._id.toString()) { %>
                                 <i class="fas fa-play-circle me-2 small"></i>
-                            <% } else { %>
-                                <i class="far fa-circle me-2 small text-muted" style="font-size: 0.6rem;"></i>
-                            <% } %>
-                            <span class="text-truncate"><%= topic.title %></span>
+                                <% } else { %>
+                                    <i class="far fa-circle me-2 small text-muted" style="font-size: 0.6rem;"></i>
+                                    <% } %>
+                                        <span class="text-truncate">
+                                            <%= topic.title %>
+                                        </span>
                         </a>
-                    <% }) %>
+                        <% }) %>
                 </div>
             </div>
-        <% } %>
-    <% } %>
+            <% } %>
+                <% } %>
 
-    <% if (typeof user !== 'undefined' && user && user.role === 'admin') { %>
-        <div class="mt-4 pt-3 border-top pb-5">
-            <a href="/admin/subject/<%= subject._id %>/add-topic" class="btn btn-dark btn-sm w-100 shadow-sm"><i class="fas fa-plus me-1"></i> Add New Topic</a>
-        </div>
-    <% } %>
+                    <% if (typeof user !=='undefined' && user && user.role==='admin' ) { %>
+                        <div class="mt-4 pt-3 border-top pb-5">
+                            <a href="/admin/subject/<%= subject._id %>/add-topic"
+                                class="btn btn-dark btn-sm w-100 shadow-sm"><i class="fas fa-plus me-1"></i> Add New
+                                Topic</a>
+                        </div>
+                        <% } %>
 </div>
