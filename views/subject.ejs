@@ -298,3 +298,388 @@
         html2pdf().set(opt).from(element).save();
     }
 </script>
+    <!-- User Notes Feature -->
+    <style>
+        .user-note-highlight {
+            background-color: #ffe066; /* Gold/Yellow highlight */
+            border-bottom: 2px solid #e6b800;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        .user-note-highlight:hover {
+            background-color: #ffd700;
+        }
+        .user-note-underline {
+            text-decoration: underline;
+            text-decoration-color: #0d6efd;
+            text-decoration-thickness: 3px;
+            background-color: rgba(13, 110, 253, 0.05);
+            cursor: pointer;
+        }
+        .user-note-underline:hover {
+             background-color: rgba(13, 110, 253, 0.15);
+        }
+        
+        #addNotePopover {
+            display: none;
+            position: absolute;
+            z-index: 1060;
+            background: white;
+            border: 1px solid rgba(0,0,0,0.1);
+            box-shadow: 0 0.5rem 1rem rgba(0,0,0,0.15);
+            border-radius: 0.5rem;
+            width: 300px;
+            padding: 1rem;
+            animation: fadeIn 0.2s ease-out;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(5px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+
+    <div id="addNotePopover">
+        <h6 class="fw-bold mb-2" id="popoverTitle">
+            <i class="fas fa-sticky-note text-warning me-2"></i><span>Add Note</span>
+        </h6>
+        
+        <div class="mb-2">
+            <span class="small text-muted me-2">Style:</span>
+            <div class="form-check form-check-inline">
+                <input class="form-check-input" type="radio" name="noteStyle" id="styleHighlight" value="highlight" checked>
+                <label class="form-check-label user-select-none" for="styleHighlight">
+                    <span class="badge bg-warning text-dark border">Highlight</span>
+                </label>
+            </div>
+            <div class="form-check form-check-inline">
+                <input class="form-check-input" type="radio" name="noteStyle" id="styleUnderline" value="underline">
+                <label class="form-check-label user-select-none" for="styleUnderline">
+                     <span class="badge bg-white text-primary border border-primary">Underline</span>
+                </label>
+            </div>
+        </div>
+
+        <textarea id="tempNoteInput" class="form-control form-control-sm mb-2" rows="2" placeholder="Write your note here..."></textarea>
+        
+        <div class="d-flex justify-content-between align-items-center">
+            <button id="deleteNoteBtn" class="btn btn-sm btn-outline-danger" style="display:none;" title="Delete Note">
+                <i class="fas fa-trash"></i>
+            </button>
+            <div class="d-flex gap-2 ms-auto">
+                <button id="cancelNoteBtn" class="btn btn-sm btn-light border">Cancel</button>
+                <button id="submitNoteBtn" class="btn btn-sm btn-primary">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const contentArea = document.querySelector('.content-area');
+        const popover = document.getElementById('addNotePopover');
+        const noteInput = document.getElementById('tempNoteInput');
+        const submitBtn = document.getElementById('submitNoteBtn');
+        const cancelBtn = document.getElementById('cancelNoteBtn');
+        const deleteBtn = document.getElementById('deleteNoteBtn');
+        const popoverTitle = document.querySelector('#popoverTitle span');
+        const topicId = '<%= activeTopic ? activeTopic._id : "" %>';
+        
+        // State
+        let currentRange = null;
+        let selectedText = '';
+        let globalOffset = 0;
+        let editingNoteId = null; // If not null, we are updating
+
+        if (!contentArea || !topicId) return;
+
+        // 1. Fetch & Render Existing Notes
+        function loadNotes() {
+            // Clear existing highlights first to avoid duplication on reload
+            // (Simpler: just reload page, but for dynamic we might clear manually.
+            // For now, we assume loadNotes runs once or after a hard refresh, but here we call it initially)
+             fetch(`/api/user-notes/${topicId}`)
+                .then(res => res.json())
+                .then(notes => {
+                    notes.sort((a,b) => b.globalOffset - a.globalOffset); 
+                    notes.forEach(renderNote);
+                    initTooltips();
+                })
+                .catch(err => console.error('Error loading notes:', err));
+        }
+        
+        loadNotes();
+
+        function initTooltips() {
+            var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+            var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+              return new bootstrap.Tooltip(tooltipTriggerEl)
+            });
+        }
+
+        // 2. Helper: Calculate Global Offset
+        function getGlobalOffset(range) {
+            let offset = 0;
+            const walker = document.createTreeWalker(contentArea, NodeFilter.SHOW_TEXT, null, false);
+            while(walker.nextNode()) {
+                const node = walker.currentNode;
+                if (node === range.startContainer) {
+                    offset += range.startOffset;
+                    break;
+                }
+                offset += node.nodeValue.length;
+            }
+            return offset;
+        }
+
+        // 3. Helper: Create Range from Offset
+        function createRangeFromOffset(start, length) {
+            let current = 0;
+            let startNode = null, startOff = 0;
+            let endNode = null, endOff = 0;
+            let foundStart = false;
+            
+            const walker = document.createTreeWalker(contentArea, NodeFilter.SHOW_TEXT, null, false);
+            
+            while(walker.nextNode()) {
+                const node = walker.currentNode;
+                const len = node.nodeValue.length;
+                
+                if (!foundStart && current + len >= start) {
+                    startNode = node;
+                    startOff = start - current;
+                    foundStart = true;
+                }
+                
+                if (foundStart && current + len >= start + length) {
+                    endNode = node;
+                    endOff = (start + length) - current;
+                    
+                    const range = document.createRange();
+                    if(startNode && endNode) {
+                         range.setStart(startNode, startOff);
+                         range.setEnd(endNode, endOff);
+                         return range;
+                    }
+                }
+                current += len;
+            }
+            return null;
+        }
+
+        // 4. Render Note Function
+        function renderNote(note) {
+            try {
+                const range = createRangeFromOffset(note.globalOffset, note.selectedText.length);
+                if (range) {
+                    const span = document.createElement('span');
+                    // Style config
+                    if (note.style === 'underline') {
+                        span.className = 'user-note-underline';
+                    } else {
+                        span.className = 'user-note-highlight';
+                    }
+                    
+                    span.setAttribute('data-bs-toggle', 'tooltip');
+                    span.setAttribute('data-bs-placement', 'top');
+                    span.title = note.noteContent;
+                    span.dataset.noteId = note._id; // Store ID for editing
+                    span.dataset.style = note.style || 'highlight';
+                    span.dataset.content = note.noteContent;
+                    
+                    // Click handler for editing
+                    span.addEventListener('click', (e) => {
+                        e.stopPropagation(); // Prevent triggering selection logic
+                        e.preventDefault();
+                        
+                        // Open popover in Edit Mode
+                        openPopoverForEdit(span, e);
+                    });
+
+                    // Safe wrapping
+                    try {
+                         range.surroundContents(span); 
+                    } catch(e) {
+                         const frag = range.extractContents();
+                         span.appendChild(frag);
+                         range.insertNode(span);
+                    }
+                }
+            } catch (e) {
+                console.warn('Could not render note:', note, e);
+            }
+        }
+
+        // 5. Handle Selection (Create Mode)
+        contentArea.addEventListener('mouseup', (e) => {
+            // If we are currently editing, clicking elsewhere should close/save?
+            // Let's rely on standard logic.
+            
+            const selection = window.getSelection();
+            if (selection.isCollapsed) return; // Ignore clicks without selection
+
+            const text = selection.toString().trim();
+            if (text.length > 0 && contentArea.contains(selection.anchorNode)) {
+                // Reset Edit Mode
+                editingNoteId = null;
+                deleteBtn.style.display = 'none';
+                popoverTitle.innerText = "Add Note";
+                noteInput.value = '';
+                document.getElementById('styleHighlight').checked = true;
+
+                const range = selection.getRangeAt(0);
+                selectedText = text;
+                currentRange = range.cloneRange();
+                globalOffset = getGlobalOffset(currentRange);
+
+                // Position Popover
+                showPopover(range);
+            }
+        });
+
+        function showPopover(rangeOrRectSource) {
+            let rect;
+            if (rangeOrRectSource.getBoundingClientRect) {
+                 rect = rangeOrRectSource.getBoundingClientRect();
+            } else {
+                 rect = rangeOrRectSource; // Assume element
+            }
+
+            popover.style.display = 'block';
+            popover.style.top = `${rect.bottom + window.scrollY + 10}px`;
+            let left = rect.left + window.scrollX + (rect.width / 2) - 150; 
+            popover.style.left = `${left}px`;
+            noteInput.focus();
+        }
+
+        function openPopoverForEdit(spanElement, e) {
+            editingNoteId = spanElement.dataset.noteId;
+            const currentContent = spanElement.dataset.content;
+            const currentStyle = spanElement.dataset.style;
+
+            // Setup UI
+            popoverTitle.innerText = "Edit Note";
+            noteInput.value = currentContent;
+            deleteBtn.style.display = 'inline-block';
+            
+            if (currentStyle === 'underline') {
+                document.getElementById('styleUnderline').checked = true;
+            } else {
+                document.getElementById('styleHighlight').checked = true;
+            }
+
+            showPopover(spanElement);
+        }
+
+        // 6. Interactions
+        cancelBtn.addEventListener('click', () => {
+            popover.style.display = 'none';
+            noteInput.value = '';
+            window.getSelection().removeAllRanges();
+            editingNoteId = null;
+        });
+
+        deleteBtn.addEventListener('click', () => {
+             if (!editingNoteId) return;
+             if (!confirm('Are you sure you want to delete this note?')) return;
+
+             fetch(`/api/user-notes/${editingNoteId}`, { method: 'DELETE' })
+                .then(() => {
+                     // Remove from DOM
+                     const span = document.querySelector(`span[data-note-id="${editingNoteId}"]`);
+                     if (span) {
+                         const parent = span.parentNode;
+                         while(span.firstChild) parent.insertBefore(span.firstChild, span);
+                         parent.removeChild(span);
+                     }
+                     
+                     popover.style.display = 'none';
+                     editingNoteId = null;
+                })
+                .catch(err => console.error(err));
+        });
+
+        submitBtn.addEventListener('click', () => {
+            const noteContent = noteInput.value.trim();
+            if (!noteContent) return;
+            
+            const style = document.querySelector('input[name="noteStyle"]:checked').value;
+
+            if (editingNoteId) {
+                // UPDATE
+                fetch(`/api/user-notes/${editingNoteId}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ noteContent, style })
+                })
+                .then(res => res.json())
+                .then(updatedNote => {
+                     // Update DOM directly without reload
+                     const span = document.querySelector(`span[data-note-id="${editingNoteId}"]`);
+                     if (span) {
+                         span.title = updatedNote.noteContent;
+                         // Hacky update of tooltip title (Bootstrap 5 tooltip dispose/init needed usually)
+                         const tooltip = bootstrap.Tooltip.getInstance(span);
+                         if (tooltip) {
+                             tooltip.setContent({ '.tooltip-inner': updatedNote.noteContent });
+                         } else {
+                             // Re-init
+                             new bootstrap.Tooltip(span);
+                         }
+
+                         span.dataset.content = updatedNote.noteContent;
+                         span.dataset.style = updatedNote.style;
+                         
+                         // Update Class
+                         if (updatedNote.style === 'underline') {
+                             span.className = 'user-note-underline';
+                         } else {
+                             span.className = 'user-note-highlight';
+                         }
+                     }
+                     popover.style.display = 'none';
+                     editingNoteId = null;
+                });
+
+            } else {
+                // CREATE
+                const payload = {
+                    topicId,
+                    selectedText,
+                    noteContent,
+                    globalOffset,
+                    style
+                };
+    
+                fetch('/api/user-notes', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                })
+                .then(res => res.json())
+                .then(note => {
+                    renderNote(note);
+                    initTooltips();
+                    popover.style.display = 'none';
+                    noteInput.value = '';
+                    window.getSelection().removeAllRanges();
+                })
+                .catch(err => {
+                    console.error(err);
+                    alert('Failed to save note.');
+                });
+            }
+        });
+        
+        // Hide on outside click
+        document.addEventListener('mousedown', (e) => {
+            if (popover.style.display === 'block' && 
+                !popover.contains(e.target) && 
+                !contentArea.contains(e.target) && 
+                !e.target.classList.contains('user-note-highlight') &&
+                !e.target.classList.contains('user-note-underline')) {
+                popover.style.display = 'none';
+                editingNoteId = null;
+            }
+        });
+    });
+    </script>

@@ -9,6 +9,7 @@ const Progress = require('../models/Progress');
 const Goal = require('../models/Goal');
 const Announcement = require('../models/Announcement');
 const Comment = require('../models/Comment');
+const UserImportantNote = require('../models/UserImportantNote');
 const { isAuthenticated } = require('../middleware/auth');
 
 // Helper to escape regex
@@ -270,6 +271,68 @@ router.post('/api/progress', isAuthenticated, async (req, res) => {
     } catch (err) {
         console.error(err);
         res.status(400).json({ success: false });
+    }
+});
+
+// API: Save User Note
+router.post('/api/user-notes', isAuthenticated, async (req, res) => {
+    try {
+        const { topicId, selectedText, noteContent, globalOffset, contextPrefix, contextSuffix, style, color } = req.body;
+        const note = new UserImportantNote({
+            user: req.session.userId,
+            topic: topicId,
+            selectedText,
+            noteContent,
+            globalOffset: globalOffset || 0,
+            contextPrefix: contextPrefix || '',
+            contextSuffix: contextSuffix || '',
+            style: style || 'highlight',
+            color: color || '#ffd700'
+        });
+        await note.save();
+        res.status(201).json(note);
+    } catch (err) {
+        console.error(err);
+        res.status(500).send('Error saving note');
+    }
+});
+
+router.put('/api/user-notes/:id', isAuthenticated, async (req, res) => {
+    try {
+        const { noteContent, style, color } = req.body;
+        const note = await UserImportantNote.findOneAndUpdate(
+            { _id: req.params.id, user: req.session.userId },
+            { noteContent, style, color },
+            { new: true }
+        );
+        if (!note) return res.status(404).send('Note not found');
+        res.json(note);
+    } catch (err) {
+        console.error(err);
+        res.status(500).send('Error updating note');
+    }
+});
+
+router.get('/api/user-notes/:topicId', isAuthenticated, async (req, res) => {
+    try {
+        const notes = await UserImportantNote.find({
+            user: req.session.userId,
+            topic: req.params.topicId
+        });
+        res.json(notes);
+    } catch (err) {
+        console.error(err);
+        res.status(500).send('Error fetching notes');
+    }
+});
+
+router.delete('/api/user-notes/:id', isAuthenticated, async (req, res) => {
+    try {
+        await UserImportantNote.findOneAndDelete({ _id: req.params.id, user: req.session.userId });
+        res.status(200).send('Deleted');
+    } catch (err) {
+        console.error(err);
+        res.status(500).send('Error deleting note');
     }
 });
 
