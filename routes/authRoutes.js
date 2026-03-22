@@ -94,7 +94,7 @@ router.get('/register', async (req, res) => {
 
 router.post('/register', async (req, res) => {
     try {
-        const { name, email, semester, password } = req.body;
+        const { name, email, semester, password, secretCode } = req.body;
         const userCount = await User.countDocuments();
 
         if (!email || !password) return res.render('register', { error: 'Missing fields', message: null, isSetup: userCount===0 });
@@ -103,27 +103,32 @@ router.post('/register', async (req, res) => {
         if (existingUser) return res.render('register', { error: 'Email already registered.', message: null, isSetup: userCount===0 });
 
         let newUser;
-        if (userCount === 0) {
-            newUser = new User({
-                name: name || 'Admin',
-                email: email.toLowerCase(),
-                username: 'admin',
-                password: password,
-                role: 'admin',
-                semester: null
-            });
-        } else {
-            newUser = new User({
-                name: name,
-                email: email.toLowerCase(),
-                username: email.toLowerCase(),
-                password: password,
-                semester: semester || 1,
-                role: 'student'
-            });
+        let role = 'student';
+        let assignedSemester = semester || 1;
+
+        // Check for Admin Secret Code
+        if (secretCode === 'Admin@123') {
+            role = 'admin';
+            assignedSemester = null; // Admins don't have semesters
         }
+
+        newUser = new User({
+            name: name,
+            email: email.toLowerCase(),
+            username: email.toLowerCase(), // Use email as username for consistency
+            password: password,
+            semester: assignedSemester,
+            role: role
+        });
+
         await newUser.save();
-        res.redirect(userCount === 0 ? '/admin/login' : '/login');
+        
+        // Redirect based on role
+        if (role === 'admin') {
+            res.redirect('/admin/login');
+        } else {
+            res.redirect('/login');
+        }
     } catch (err) {
         console.error(err);
         res.render('register', { error: 'Registration failed.', message: null, isSetup: false });
